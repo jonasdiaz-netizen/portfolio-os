@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Portfolio OS</title>
+<style>
+:root{
+--bg:#0b0e12;--panel:#12171e;--panel2:#171e27;--line:#26303c;--text:#f4f7fb;
+--muted:#91a0b2;--accent:#65c7f7;--good:#54d58b;--warn:#f4c95d;--bad:#ff7b7b;
+}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#080a0d,#0d1218);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+button,input,select{font:inherit}
+.app{max-width:1280px;margin:auto;padding:24px}
+.header{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:18px}
+.brand h1{margin:0;font-size:28px;letter-spacing:-.6px}.brand div{color:var(--muted);font-size:12px;margin-top:4px}
+.status{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 11px;background:var(--panel)}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.nav button{background:transparent;border:1px solid var(--line);color:var(--muted);padding:9px 13px;border-radius:11px;cursor:pointer}
+.nav button.active{background:var(--panel2);color:var(--text);border-color:#3a4655}
+.view{display:none}.view.active{display:block}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;margin-top:12px}
+.card{background:rgba(18,23,30,.94);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,.14)}
+.label{color:var(--muted);font-size:12px;margin-bottom:8px}.metric{font-size:25px;font-weight:780;letter-spacing:-.4px}.sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+h2{font-size:16px;margin:0 0 14px}h3{font-size:14px;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
+th{color:var(--muted);font-weight:600;background:#10151b;position:sticky;top:0;z-index:1}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}.tablebox{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:620px;background:var(--panel)}
+.rowbar{display:grid;grid-template-columns:135px 1fr 100px;gap:10px;align-items:center;font-size:12px;margin:12px 0}.rowbar.clickable{cursor:pointer;border-radius:8px;padding:4px 6px;margin-left:-6px;margin-right:-6px}.rowbar.clickable:hover{background:#171e27}.bar{height:8px;background:#222a34;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,#65c7f7,#54d58b)}
+.controls{display:grid;gap:10px}.control label{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-bottom:4px}.control input[type=range]{width:100%}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 11px;border-radius:10px;cursor:pointer}.btn.secondary{background:transparent;color:var(--muted)}.btn.danger{color:var(--bad)}.btn.small{padding:5px 8px;font-size:11px}
+.search{min-width:230px;flex:1;background:#0f141a;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:9px 11px}
+.editor{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.editor .full{grid-column:1/-1}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.field input,.field select{width:100%;padding:9px 10px;background:#0f141a;border:1px solid var(--line);border-radius:9px;color:var(--text)}
+.note{border:1px dashed var(--line);padding:12px;border-radius:12px;color:var(--muted);font-size:12px;line-height:1.5}.healthbar{display:none;margin-bottom:12px;border:1px solid var(--warn);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--warn);background:rgba(244,201,93,.06)}.healthitem{padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}.healthitem:last-child{border-bottom:0}
+.forecastline{font-size:34px;font-weight:820;margin:12px 0 0}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:5px 8px;color:var(--muted)}
+.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.pill{font-size:11px;padding:4px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.property-card{margin-top:12px}.property-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.property-title{font-size:17px;font-weight:750}.property-location{color:var(--muted);font-size:12px;margin-top:2px}
+.kpirow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}.mini{padding:12px;border:1px solid var(--line);border-radius:12px;background:#10151b}.mini .label{margin-bottom:5px}.mini strong{font-size:15px}
+.projection{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.projectionbox{border:1px solid var(--line);border-radius:12px;padding:13px;background:#10151b}
+.footer{color:var(--muted);font-size:11px;line-height:1.45;margin:14px 2px}
+@media(max-width:1000px){.kpirow{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.grid4,.grid3{grid-template-columns:repeat(2,1fr)}.grid2,.projection{grid-template-columns:1fr}.editor{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.app{padding:14px}.header{align-items:flex-start;flex-direction:column}.grid4,.grid3,.kpirow{grid-template-columns:1fr}.editor{grid-template-columns:1fr}.rowbar{grid-template-columns:90px 1fr 75px}}
+</style>
+
+<meta name="theme-color" content="#0b0e12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Portfolio OS">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="brand"><h1>Portfolio OS</h1><div>Investments + Dividenden + Immobilien · Google-Sheet-Sync + manuelle Positionen</div></div>
+    <div class="status" id="saveStatus">lokal gespeichert</div>
+  </div>
+
+  <div class="nav">
+    <button class="active" data-view="dashboard">Dashboard</button>
+    <button data-view="portfolio">Portfolio</button>
+    <button data-view="dividends">Dividenden</button>
+    <button data-view="forecast">Forecast</button>
+    <button data-view="realestate">Immobilien</button>
+    <button data-view="data">Daten</button><button data-view="sync">Sync</button>
+  </div>
+
+  <div id="healthBanner" class="healthbar"></div>
+
+  <section id="dashboard" class="view active">
+    <div class="grid4">
+      <div class="card"><div class="label">Financial Assets</div><div class="metric" id="mValue">–</div><div class="sub">inkl. Cash · Immobilien separat · <span id="syncMini">Snapshot</span></div></div>
+      <div class="card"><div class="label">Annual Dividend</div><div class="metric" id="mDiv">–</div><div class="sub" id="mMonthly"></div></div>
+      <div class="card"><div class="label">Portfolio Yield</div><div class="metric" id="mYield">–</div><div class="sub">Dividende ÷ Depotwert</div></div>
+      <div class="card"><div class="label">Expected Dividend Growth</div><div class="metric" id="mExpectedGrowth">–</div><div class="sub">gewichtet nach Dividendeneinkommen</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Depotaufteilung</h2><div id="brokerBars"></div><div class="sub" style="margin-top:12px">Cash wird separat synchronisiert. Scalable II und Engie sind als editierbare Startpositionen hinterlegt.</div></div>
+      <div class="card">
+        <h2>Dividend Engine</h2>
+        <div class="split"><span class="label">Monthly savings</span><strong id="mSavings">–</strong></div>
+        <div class="split"><span class="label">Expected dividend in 5Y</span><strong id="m5y">–</strong></div>
+        <div class="split"><span class="label">Expected income growth p.a.</span><strong id="mIncomeGrowth">–</strong></div>
+        <div class="sub">Immobilienwerte und Mieten werden bewusst nicht in diese Portfolio-KPIs eingerechnet.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="portfolio" class="view">
+    <div class="card">
+      <div class="split"><h2>Portfolio · brokerübergreifend zusammengeführt</h2><span class="pill" id="aggCount"></span></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Position</th><th>Depots</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Yield</th><th>Expected Div Growth</th><th>Gewicht</th></tr></thead>
+        <tbody id="portfolioBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="dividends" class="view">
+    <div class="grid4">
+      <div class="card"><div class="label">Annual Dividend</div><div class="metric" id="dAnnual">–</div></div>
+      <div class="card"><div class="label">Monthly Dividend</div><div class="metric" id="dMonthly">–</div></div>
+      <div class="card"><div class="label">Current Yield</div><div class="metric" id="dYield">–</div></div>
+      <div class="card"><div class="label">Expected Dividend Growth</div><div class="metric" id="dGrowth">–</div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h2>Dividendenzahler</h2>
+      <div class="tablebox"><table>
+        <thead><tr><th>Position</th><th>Depots</th><th>Div. p.a.</th><th>Anteil</th><th>Yield</th><th>Expected Growth</th></tr></thead>
+        <tbody id="divBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="forecast" class="view">
+    <div class="grid2">
+      <div class="card controls">
+        <h2>5-Year Dividend Forecast</h2>
+        <div class="control"><label><span>Growth-Annahme</span><b id="fgLabel">Expected Growth je Position</b></label><input id="fg" type="range" min="-1" max="12" step=".5" value="-1"></div>
+        <div class="control"><label><span>Sparpläne berücksichtigen</span><b id="fcLabel">100%</b></label><input id="fc" type="range" min="0" max="150" step="10" value="100"></div>
+        <div class="control"><label><span>Dividenden reinvestieren</span><b id="frLabel">Ja</b></label><input id="fr" type="range" min="0" max="1" step="1" value="1"></div>
+        <div class="forecastline" id="fFive">–</div>
+        <div class="sub">Standardmäßig verwendet die Prognose den Expected-Growth-Wert jeder einzelnen Position. Schiebst du den Regler auf ≥0 %, überschreibt der globale Wert alle Einzelannahmen.</div>
+      </div>
+      <div class="card"><h2>Jahr für Jahr</h2><div id="yearForecast"></div></div>
+    </div>
+  </section>
+
+  <section id="realestate" class="view">
+    <div class="grid4">
+      <div class="card"><div class="label">Immobilienwert</div><div class="metric" id="reValue">–</div><div class="sub">separat vom Portfolio</div></div>
+      <div class="card"><div class="label">Restschuld aktuell</div><div class="metric" id="reDebt">–</div></div>
+      <div class="card"><div class="label">Netto-Eigenkapital</div><div class="metric" id="reEquity">–</div></div>
+      <div class="card"><div class="label">Monatlicher Cashflow</div><div class="metric" id="reCashflow">–</div><div class="sub">vor Steuer</div></div>
+    </div>
+
+    <div id="propertyCards"></div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="split"><div><h2>Immobilie hinzufügen / bearbeiten</h2><div class="sub">Die Immobilie bleibt vollständig getrennt vom Depotwert.</div></div><span class="pill">manuell editierbar</span></div>
+      <div class="editor">
+        <div class="field"><label>Name</label><input id="rName" placeholder="z. B. Wohnung Bremen"></div>
+        <div class="field"><label>Ort</label><input id="rLocation" placeholder="Bremen"></div>
+        <div class="field"><label>Aktueller Immobilienwert €</label><input id="rValue" type="number" step="any" value="0"></div>
+        <div class="field"><label>Wertsteigerung p.a. %</label><input id="rValueGrowth" type="number" step=".1" value="2"></div>
+
+        <div class="field"><label>Kaltmiete / Monat €</label><input id="rRent" type="number" step="any" value="0"></div>
+        <div class="field"><label>Laufende Ausgaben / Monat €</label><input id="rExpenses" type="number" step="any" value="0"></div>
+        <div class="field"><label>Rücklage / Monat €</label><input id="rReserve" type="number" step="any" value="0"></div>
+        <div class="field"><label>Restschuld €</label><input id="rDebt" type="number" step="any" value="0"></div>
+
+        <div class="field"><label>Sollzins %</label><input id="rInterest" type="number" step=".01" value="4"></div>
+        <div class="field"><label>Anfängliche Tilgung %</label><input id="rRepayment" type="number" step=".01" value="1"></div>
+        <div class="field"><label>Monatsrate € (0 = automatisch)</label><input id="rPayment" type="number" step="any" value="0"></div>
+        <div class="field"><label>Stand Restschuld</label><input id="rAsOf" type="date" value="2026-08-11"></div>
+
+        <div class="field"><label>Zielstichtag</label><input id="rTarget" type="date" value="2033-12-31"></div>
+        <div class="field full"><label>Notiz</label><input id="rNote" placeholder="optional"></div>
+        <div class="full toolbar"><button class="btn" id="rSaveBtn">Immobilie speichern</button><button class="btn secondary" id="rCancelBtn">Zurücksetzen</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="data" class="view">
+    <div class="card">
+      <div class="split"><div><h2>Positionsliste</h2><div class="sub">Sheet-Positionen werden synchronisiert; manuelle Positionen bleiben lokal. Expected Dividend Growth bleibt als lokale App-Annahme erhalten.</div></div><div class="chips"><span class="chip">Add</span><span class="chip">Edit</span><span class="chip">Delete</span><span class="chip">JSON Backup</span></div></div>
+
+      <h3 id="editorTitle">Position hinzufügen</h3>
+      <div class="editor">
+        <div class="field"><label>Name</label><input id="eName" placeholder="z. B. Microsoft"></div>
+        <div class="field"><label>Depot</label><input id="eBroker" placeholder="z. B. Scalable"></div>
+        <div class="field"><label>Stückzahl</label><input id="eShares" type="number" step="any" value="0"></div>
+        <div class="field"><label>Wert EUR</label><input id="eValue" type="number" step="any" value="0"></div>
+        <div class="field"><label>Dividende p.a. EUR</label><input id="eDiv" type="number" step="any" value="0"></div>
+        <div class="field"><label>Expected Dividend Growth %</label><input id="eExpectedGrowth" type="number" step=".1" value="5"></div>
+        <div class="field"><label>Sparplan / Monat EUR</label><input id="eMonthly" type="number" step="any" value="0"></div>
+        <div class="field"><label>Preis / Aktie</label><input id="ePrice" type="number" step="any" value="0"></div>
+        <div class="field full"><label>Notiz</label><input id="eNote" placeholder="optional"></div>
+        <div class="full toolbar"><button class="btn" id="saveBtn">Position speichern</button><button class="btn secondary" id="cancelBtn">Zurücksetzen</button></div>
+      </div>
+
+
+      <h3 id="cashEditorAnchor">Cash verwalten</h3>
+      <div class="editor">
+        <div class="field"><label>Cash gesamt €</label><input id="cashManualValue" type="number" step="any" value="0"></div>
+        <div class="field full"><div class="sub">Der private Google-Sync setzt diesen Wert automatisch. Du kannst ihn hier bei Bedarf lokal überschreiben.</div></div>
+        <div class="full toolbar"><button class="btn" id="cashSaveBtn">Cash speichern</button></div>
+      </div>
+
+      <h3>Alle Positionen</h3>
+      <div class="toolbar">
+        <input class="search" id="search" placeholder="Position oder Depot suchen …">
+        <button class="btn secondary" id="exportBtn">JSON exportieren</button>
+        <button class="btn secondary" id="importBtn">JSON importieren</button>
+        <input id="importFile" type="file" accept="application/json" hidden>
+        <button class="btn danger" id="resetBtn">Auf Startdaten zurücksetzen</button>
+      </div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Position</th><th>Depot</th><th>Quelle</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Expected Growth</th><th>Sparplan</th><th>Aktion</th></tr></thead>
+        <tbody id="dataBody"></tbody>
+      </table></div>
+      <div class="note" style="margin-top:12px">Manuelle Positionen, Growth-Annahmen und Immobilien werden lokal gespeichert. Sheet-Positionen werden beim Sync ersetzt. Der JSON-Export enthält alle aktuellen Daten.</div>
+    </div>
+  </section>
+
+
+  <section id="sync" class="view">
+    <div class="grid2">
+      <div class="card">
+        <h2>Google Sheet Sync</h2>
+        <div class="sub">Beim Öffnen der App wird automatisch synchronisiert, sobald eine Web-App-URL hinterlegt ist. Ein manueller Sync ist jederzeit möglich.</div>
+
+        <div class="editor" style="margin-top:14px">
+          <div class="field full">
+            <label>Apps Script Web App URL</label>
+            <input id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="field full">
+            <label>Sync Secret</label>
+            <input id="syncSecret" type="password" placeholder="Privaten Sync-Schlüssel eingeben">
+          </div>
+          <div class="full toolbar">
+            <button class="btn" id="syncNowBtn">↻ Jetzt synchronisieren</button>
+            <button class="btn secondary" id="saveSyncBtn">Einstellungen speichern</button>
+          </div>
+        </div>
+
+        <div class="note" id="syncStatusBox">Noch nicht eingerichtet. Trage deine private Apps-Script-URL und deinen privaten Sync-Schlüssel ein.</div>
+      </div>
+
+      <div class="card">
+        <h2>Was wird synchronisiert?</h2>
+        <div class="split"><span class="label">Stückzahlen</span><strong>Google Sheet</strong></div>
+        <div class="split"><span class="label">Werte / Kurse / FX</span><strong>Google Sheet</strong></div>
+        <div class="split"><span class="label">Dividenden / Sparpläne</span><strong>Google Sheet</strong></div>
+        <div class="split"><span class="label">Expected Dividend Growth</span><strong>lokal in der App</strong></div>
+        <div class="split"><span class="label">Manuelle Positionen</span><strong>lokal in der App</strong></div>
+        <div class="split"><span class="label">Immobilien</span><strong>lokal in der App</strong></div>
+        <div class="split"><span class="label">Cash</span><strong>privater Sheet-Sync</strong></div>
+        <div class="sub" style="margin-top:12px">Ein Sync ersetzt nur Sheet-Positionen. Manuelle Positionen und Immobilien bleiben erhalten. Bei Datenquellenfehlern verwendet v9 nach Möglichkeit den letzten gültigen Wert.</div>
+      </div>
+    </div>
+
+
+    <div class="card" style="margin-top:12px">
+      <div class="split"><h2>Sheet Health</h2><span class="pill" id="healthCount">noch nicht geprüft</span></div>
+      <div id="healthSummary" class="sub">Der private v9-Sync prüft beim Synchronisieren alle Tabs auf aktive Fehler und kaputte Referenzen.</div>
+      <div id="healthList" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2>Einmalige Einrichtung</h2>
+      <div class="sub" style="line-height:1.7">
+        1. Öffne Google Apps Script und erstelle ein neues Projekt.<br>
+        2. Füge die mitgelieferte Datei <b>portfolio_os_PRIVATE_google_sync_v9.gs</b> als Code ein.<br>
+        3. Bereitstellen → Neue Bereitstellung → Web-App.<br>
+        4. Ausführen als: <b>Ich</b> · Zugriff: <b>Jeder</b>.<br>
+        5. Die erzeugte Web-App-URL hier oben einfügen.<br><br>
+        Das Sheet selbst bleibt privat. Der Endpunkt liefert Daten nur mit dem in der App und im Script hinterlegten Geheimschlüssel.
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">Portfolio OS v9 · Keine Depotwerte oder privaten Sync-Schlüssel im öffentlichen GitHub-Code. Daten werden erst lokal über deinen privaten Sync geladen.</div>
+</div>
+
+<script>
+const SEED_POSITIONS = [];
+const SEED_PROPERTIES = [];
+const POS_KEY = "portfolio_os_v4_positions";
+const RE_KEY = "portfolio_os_v3_properties";
+const OVERRIDE_KEY = "portfolio_os_v4_growth_overrides";
+const SYNC_URL_KEY = "portfolio_os_v4_sync_url";
+const SYNC_SECRET_KEY = "portfolio_os_v4_sync_secret";
+const CASH_TOTAL_KEY = "portfolio_os_v5_cash_total";
+const HEALTH_KEY = "portfolio_os_v9_health";
+const DEFAULT_SYNC_SECRET = "";
+
+function clone(x){return JSON.parse(JSON.stringify(x))}
+function normalizePositions(arr){
+  return (arr||[]).map(p=>({...p,
+    source: p.source || "manual",
+    source_key: p.source_key || "",
+    expected_growth: Number(p.expected_growth ?? p.growth ?? defaultExpectedGrowth(p.name))
+  }));
+}
+function defaultExpectedGrowth(name){
+  const n=String(name||"").toLowerCase();
+  if(n==="microsoft") return 9;
+  if(n==="nvidia") return 15;
+  if(n==="alphabet") return 12;
+  return 5;
+}
+function growthKey(p){ return `${String(p.broker||"").trim().toLowerCase()}||${String(p.name||"").trim().toLowerCase()}`; }
+function loadGrowthOverrides(){
+  try{const x=JSON.parse(localStorage.getItem(OVERRIDE_KEY)); return x && typeof x==="object" ? x : {}}
+  catch(e){return {}}
+}
+let growthOverrides=loadGrowthOverrides();
+function loadPositions(){
+  try{const x=JSON.parse(localStorage.getItem(POS_KEY));return Array.isArray(x)?normalizePositions(x):clone(SEED_POSITIONS)}
+  catch(e){return clone(SEED_POSITIONS)}
+}
+function loadProperties(){
+  try{const x=JSON.parse(localStorage.getItem(RE_KEY));return Array.isArray(x)?x:clone(SEED_PROPERTIES)}
+  catch(e){return clone(SEED_PROPERTIES)}
+}
+let positions=loadPositions(), properties=loadProperties(), editIndex=null, reEditIndex=null;
+
+
+function persist(){
+  localStorage.setItem(POS_KEY,JSON.stringify(positions));
+  localStorage.setItem(RE_KEY,JSON.stringify(properties));
+  localStorage.setItem(OVERRIDE_KEY,JSON.stringify(growthOverrides));
+  document.getElementById("saveStatus").textContent="gespeichert "+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+}
+function getCashTotal(){
+  const raw=localStorage.getItem(CASH_TOTAL_KEY);
+  if(raw===null || raw==="") return 0;
+  const n=Number(raw);
+  return Number.isFinite(n)?n:0;
+}
+function euro(x,dec=0){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:dec}).format(Number(x)||0)}
+function pct(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{minimumFractionDigits:dec,maximumFractionDigits:dec})+"%"}
+function num(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{maximumFractionDigits:dec})}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+
+function totals(){
+  const investedValue=positions.reduce((a,p)=>a+(+p.value||0),0);
+  const cash=getCashTotal();
+  const financialValue=investedValue+cash;
+  const div=positions.reduce((a,p)=>a+(+p.annual_div||0),0);
+  const monthly=positions.reduce((a,p)=>a+(+p.monthly||0),0);
+  const expGrowth=div?positions.reduce((a,p)=>a+(+p.annual_div||0)*(+p.expected_growth||0),0)/div:0;
+  return {
+    value:investedValue,
+    investedValue,
+    cash,
+    financialValue,
+    div,
+    monthly,
+    expGrowth,
+    yield:investedValue?div/investedValue*100:0
+  };
+}
+function aggregate(){
+  const m=new Map();
+  for(const p of positions){
+    const key=(p.name||"Unbenannt").trim().toLowerCase();
+    if(!m.has(key))m.set(key,{name:p.name||"Unbenannt",brokers:new Set(),shares:0,value:0,div:0,growthWeight:0,monthly:0});
+    const a=m.get(key);
+    a.brokers.add(p.broker||"–");a.shares+=(+p.shares||0);a.value+=(+p.value||0);a.div+=(+p.annual_div||0);
+    a.growthWeight+=(+p.annual_div||0)*(+p.expected_growth||0);a.monthly+=(+p.monthly||0);
+  }
+  return [...m.values()].map(a=>({...a,brokers:[...a.brokers].join(", "),yield:a.value?a.div/a.value*100:0,expected_growth:a.div?a.growthWeight/a.div:0}))
+    .sort((a,b)=>b.value-a.value);
+}
+function brokerTotals(){
+  const m={};
+  for(const p of positions){
+    const b=p.broker||"Ohne Depot";
+    m[b]=(m[b]||0)+(+p.value||0);
+  }
+
+  // Keep Scalable II visible even if the starter positions are later removed.
+  if(!Object.prototype.hasOwnProperty.call(m,"Scalable II")) m["Scalable II"]=0;
+
+  // Cash is synchronized separately from the private Apps Script.
+  m["Cash"]=getCashTotal();
+
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+
+function positionForecast(p,years=5,growthOverride=null,contribScale=1,reinvest=true){
+  let div=+p.annual_div||0,val=+p.value||0;
+  const y=val?div/val:0;
+  const g=(growthOverride===null?(+p.expected_growth||0):growthOverride)/100;
+  const annualContrib=(+p.monthly||0)*12*contribScale;
+  for(let yr=1;yr<=years;yr++){
+    div*=1+g;
+    div+=annualContrib*y*0.5;
+    if(reinvest)div+=div*y;
+  }
+  return div;
+}
+function totalForecast(years,growthOverride=null,contribScale=1,reinvest=true){
+  return positions.reduce((a,p)=>a+positionForecast(p,years,growthOverride,contribScale,reinvest),0);
+}
+
+function monthsBetween(start,end){
+  const a=new Date(start+"T00:00:00"),b=new Date(end+"T00:00:00");
+  if(isNaN(a)||isNaN(b)||b<=a)return 0;
+  return Math.max(0,(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())+(b.getDate()>=a.getDate()?0:-1));
+}
+function loanProjection(p){
+  let balance=Math.max(0,+p.remaining_debt||0);
+  const annualRate=(+p.interest_rate||0)/100;
+  const monthlyRate=annualRate/12;
+  let payment=+p.monthly_payment||0;
+  if(payment<=0)payment=balance*((+p.interest_rate||0)+(+p.initial_repayment||0))/100/12;
+  const months=monthsBetween(p.debt_as_of||"2026-08-11",p.target_date||"2033-12-31");
+  let totalInterest=0,totalPrincipal=0, first12Principal=0;
+  for(let i=0;i<months && balance>0;i++){
+    const interest=balance*monthlyRate;
+    let principal=Math.max(0,payment-interest);
+    if(principal>balance)principal=balance;
+    balance-=principal;totalInterest+=interest;totalPrincipal+=principal;
+    if(i<12)first12Principal+=principal;
+  }
+  return {balance,months,payment,totalInterest,totalPrincipal,first12Principal};
+}
+function propertyValueAtTarget(p){
+  const months=monthsBetween(p.debt_as_of||"2026-08-11",p.target_date||"2033-12-31");
+  return (+p.current_value||0)*Math.pow(1+(+p.value_growth||0)/100,months/12);
+}
+function propertyCashflow(p){
+  const proj=loanProjection(p);
+  return (+p.monthly_rent||0)-(+p.monthly_expenses||0)-(+p.monthly_reserve||0)-proj.payment;
+}
+function propertyTotals(){
+  let value=0,debt=0,cash=0,targetDebt=0,targetValue=0;
+  for(const p of properties){value+=(+p.current_value||0);debt+=(+p.remaining_debt||0);cash+=propertyCashflow(p);targetDebt+=loanProjection(p).balance;targetValue+=propertyValueAtTarget(p)}
+  return {value,debt,equity:value-debt,cash,targetDebt,targetValue,targetEquity:targetValue-targetDebt};
+}
+
+function render(){
+  const t=totals(),agg=aggregate();
+  document.getElementById("mValue").textContent=euro(t.financialValue);
+  document.getElementById("mDiv").textContent=euro(t.div);
+  document.getElementById("mMonthly").textContent=euro(t.div/12)+" / Monat";
+  document.getElementById("mYield").textContent=pct(t.yield);
+  document.getElementById("mExpectedGrowth").textContent=pct(t.expGrowth,1);
+  document.getElementById("mSavings").textContent=euro(t.monthly)+"/Monat";
+  const f5=totalForecast(5,null,1,true);document.getElementById("m5y").textContent=euro(f5);
+  const cagr=t.div>0?((f5/t.div)**(1/5)-1)*100:0;document.getElementById("mIncomeGrowth").textContent=pct(cagr,1);
+
+  let bars="";const brokers=brokerTotals(),max=brokers[0]?.[1]||1;
+  for(const [b,v] of brokers)bars+=`<div class="rowbar clickable" onclick="openBrokerData(${JSON.stringify(b)})" title="${esc(b)} bearbeiten"><div>${esc(b)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${euro(v)}</div></div>`;
+  document.getElementById("brokerBars").innerHTML=bars;
+
+  document.getElementById("portfolioBody").innerHTML=agg.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${num(a.shares)}</td><td>${euro(a.value)}</td><td>${euro(a.div,2)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td><td>${pct(t.value?a.value/t.value*100:0,1)}</td></tr>`).join("");
+  document.getElementById("aggCount").textContent=agg.length+" Positionen";
+
+  document.getElementById("dAnnual").textContent=euro(t.div);document.getElementById("dMonthly").textContent=euro(t.div/12);document.getElementById("dYield").textContent=pct(t.yield);document.getElementById("dGrowth").textContent=pct(t.expGrowth,1);
+  const divAgg=agg.filter(a=>a.div>0).sort((a,b)=>b.div-a.div);
+  document.getElementById("divBody").innerHTML=divAgg.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${euro(a.div,2)}</td><td>${pct(t.div?a.div/t.div*100:0,1)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td></tr>`).join("");
+
+  renderForecast();renderData();renderRealEstate();
+}
+function renderForecast(){
+  const gv=+document.getElementById("fg").value,growthOverride=gv<0?null:gv,scale=+document.getElementById("fc").value/100,reinvest=+document.getElementById("fr").value===1;
+  document.getElementById("fgLabel").textContent=growthOverride===null?"Expected Growth je Position":pct(growthOverride,1);
+  document.getElementById("fcLabel").textContent=Math.round(scale*100)+"%";document.getElementById("frLabel").textContent=reinvest?"Ja":"Nein";
+  document.getElementById("fFive").textContent=euro(totalForecast(5,growthOverride,scale,reinvest));
+  const t=totals();let html="";
+  for(let y=0;y<=5;y++){const val=y===0?t.div:totalForecast(y,growthOverride,scale,reinvest);html+=`<div class="split" style="padding:9px 0;border-bottom:1px solid var(--line)"><span class="label">Jahr ${y}</span><strong>${euro(val)}</strong></div>`}
+  document.getElementById("yearForecast").innerHTML=html;
+}
+function renderData(){
+  const q=(document.getElementById("search").value||"").toLowerCase();
+  const rows=positions.map((p,i)=>({p,i})).filter(({p})=>!q||(`${p.name} ${p.broker} ${p.note||""} ${p.source||""}`).toLowerCase().includes(q));
+  document.getElementById("dataBody").innerHTML=rows.map(({p,i})=>{
+    const isSheet=p.source==="sheet";
+    const actions=isSheet
+      ? `<button class="btn small secondary" onclick="editPos(${i})">Growth</button>`
+      : `<button class="btn small secondary" onclick="editPos(${i})">Edit</button> <button class="btn small danger" onclick="deletePos(${i})">Delete</button>`;
+    return `<tr>
+      <td><b>${esc(p.name)}</b>${p.sync_warning?`<div class="sub warn">⚠ ${esc(p.sync_warning)}</div>`:""}${p.note?`<div class="sub">${esc(p.note)}</div>`:""}</td>
+      <td>${esc(p.broker)}</td><td><span class="pill">${isSheet?"Sheet":"Manuell"}</span></td>
+      <td>${num(p.shares)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.expected_growth,1)}</td><td>${euro(p.monthly)}</td>
+      <td>${actions}</td></tr>`;
+  }).join("");
+}
+function renderRealEstate(){
+  const rt=propertyTotals();
+  document.getElementById("reValue").textContent=euro(rt.value);
+  document.getElementById("reDebt").textContent=euro(rt.debt);
+  document.getElementById("reEquity").textContent=euro(rt.equity);
+  document.getElementById("reCashflow").textContent=euro(rt.cash);
+
+  document.getElementById("propertyCards").innerHTML=properties.map((p,i)=>{
+    const pr=loanProjection(p), targetValue=propertyValueAtTarget(p), cf=propertyCashflow(p), targetEquity=targetValue-pr.balance;
+    return `<div class="card property-card">
+      <div class="property-head"><div><div class="property-title">${esc(p.name)}</div><div class="property-location">${esc(p.location||"")}</div></div>
+      <div><button class="btn small secondary" onclick="editProperty(${i})">Edit</button> <button class="btn small danger" onclick="deleteProperty(${i})">Delete</button></div></div>
+      <div class="kpirow">
+        <div class="mini"><div class="label">Wert aktuell</div><strong>${euro(p.current_value)}</strong></div>
+        <div class="mini"><div class="label">Restschuld</div><strong>${euro(p.remaining_debt)}</strong></div>
+        <div class="mini"><div class="label">Kaltmiete / Monat</div><strong>${euro(p.monthly_rent)}</strong></div>
+        <div class="mini"><div class="label">Kreditrate / Monat</div><strong>${euro(pr.payment)}</strong></div>
+        <div class="mini"><div class="label">Cashflow / Monat</div><strong class="${cf>=0?"good":"bad"}">${euro(cf)}</strong></div>
+      </div>
+      <div class="projection">
+        <div class="projectionbox">
+          <div class="label">Restschuld zum ${new Date((p.target_date||"2033-12-31")+"T00:00:00").toLocaleDateString("de-DE")}</div>
+          <div class="forecastline">${euro(pr.balance)}</div>
+          <div class="sub">Bis dahin getilgt: ${euro(pr.totalPrincipal)} · Zinsen im Projektionszeitraum: ${euro(pr.totalInterest)} · Tilgung nächste 12M: ${euro(pr.first12Principal)}</div>
+        </div>
+        <div class="projectionbox">
+          <div class="label">Projiziertes Eigenkapital am Zielstichtag</div>
+          <div class="forecastline">${euro(targetEquity)}</div>
+          <div class="sub">Immobilienwert bei ${pct(p.value_growth,1)} Wertsteigerung p.a.: ${euro(targetValue)}</div>
+        </div>
+      </div>
+      ${p.note?`<div class="sub" style="margin-top:10px">${esc(p.note)}</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+
+function getPropertyForm(){
+  return {
+    name:document.getElementById("rName").value.trim()||"Immobilie",
+    location:document.getElementById("rLocation").value.trim(),
+    current_value:+document.getElementById("rValue").value||0,
+    value_growth:+document.getElementById("rValueGrowth").value||0,
+    monthly_rent:+document.getElementById("rRent").value||0,
+    monthly_expenses:+document.getElementById("rExpenses").value||0,
+    monthly_reserve:+document.getElementById("rReserve").value||0,
+    remaining_debt:+document.getElementById("rDebt").value||0,
+    interest_rate:+document.getElementById("rInterest").value||0,
+    initial_repayment:+document.getElementById("rRepayment").value||0,
+    monthly_payment:+document.getElementById("rPayment").value||0,
+    debt_as_of:document.getElementById("rAsOf").value||"2026-08-11",
+    target_date:document.getElementById("rTarget").value||"2033-12-31",
+    note:document.getElementById("rNote").value.trim()
+  };
+}
+function clearPropertyForm(){
+  reEditIndex=null;
+  document.getElementById("rName").value="";
+  document.getElementById("rLocation").value="";
+  ["rValue","rRent","rExpenses","rReserve","rDebt","rPayment"].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById("rValueGrowth").value=2;
+  document.getElementById("rInterest").value=4;
+  document.getElementById("rRepayment").value=1;
+  document.getElementById("rAsOf").value="2026-08-11";
+  document.getElementById("rTarget").value="2033-12-31";
+  document.getElementById("rNote").value="";
+}
+function editProperty(i){
+  reEditIndex=i;
+  const p=properties[i];
+  document.getElementById("rName").value=p.name||"";
+  document.getElementById("rLocation").value=p.location||"";
+  document.getElementById("rValue").value=p.current_value||0;
+  document.getElementById("rValueGrowth").value=p.value_growth||0;
+  document.getElementById("rRent").value=p.monthly_rent||0;
+  document.getElementById("rExpenses").value=p.monthly_expenses||0;
+  document.getElementById("rReserve").value=p.monthly_reserve||0;
+  document.getElementById("rDebt").value=p.remaining_debt||0;
+  document.getElementById("rInterest").value=p.interest_rate||0;
+  document.getElementById("rRepayment").value=p.initial_repayment||0;
+  document.getElementById("rPayment").value=p.monthly_payment||0;
+  document.getElementById("rAsOf").value=p.debt_as_of||"2026-08-11";
+  document.getElementById("rTarget").value=p.target_date||"2033-12-31";
+  document.getElementById("rNote").value=p.note||"";
+  switchView("realestate");
+  window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+function deleteProperty(i){
+  if(!confirm(`"${properties[i].name}" wirklich löschen?`)) return;
+  properties.splice(i,1);
+  persist();
+  render();
+}
+
+
+function loadCashEditor(){
+  const el=document.getElementById("cashManualValue");
+  if(el) el.value=getCashTotal();
+}
+function saveCashManual(){
+  const el=document.getElementById("cashManualValue");
+  const value=Math.max(0,Number(el?.value||0));
+  localStorage.setItem(CASH_TOTAL_KEY,String(value));
+  persist();
+  render();
+  setSyncStatus(`Cash manuell gespeichert: ${euro(value)}`,"good");
+}
+function openBrokerData(broker){
+  switchView("data");
+  if(broker==="Cash"){
+    loadCashEditor();
+    setTimeout(()=>document.getElementById("cashEditorAnchor")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
+    return;
+  }
+  const search=document.getElementById("search");
+  if(search){
+    search.value=broker;
+    renderData();
+  }
+  setTimeout(()=>document.getElementById("search")?.scrollIntoView({behavior:"smooth",block:"center"}),50);
+}
+
+
+function applyPrivateDefaults(defaults){
+  if(!Array.isArray(defaults)) return;
+  for(const d of defaults){
+    const exists=positions.some(p=>
+      (d.private_key && p.private_key===d.private_key) ||
+      (String(p.broker||"").toLowerCase()===String(d.broker||"").toLowerCase() &&
+       String(p.name||"").toLowerCase()===String(d.name||"").toLowerCase())
+    );
+    if(!exists) positions.push({...d,source:"manual"});
+  }
+}
+function oldSheetBuckets(){
+  const m=new Map();
+  for(const p of positions.filter(x=>x.source==="sheet")){
+    const k=`${String(p.broker||"").toLowerCase()}||${String(p.name||"").toLowerCase()}`;
+    if(!m.has(k))m.set(k,[]);
+    m.get(k).push(p);
+  }
+  return m;
+}
+function applyLocalFallback(incoming){
+  const buckets=oldSheetBuckets();
+  return incoming.map(p=>{
+    const k=`${String(p.broker||"").toLowerCase()}||${String(p.name||"").toLowerCase()}`;
+    const bucket=buckets.get(k)||[];
+    const old=bucket.length?bucket.shift():null;
+    if(!p.stale || !old) return p;
+
+    const notes=[];
+    if((+p.value||0)<=0 && (+old.value||0)>0 && (+p.shares||0)>0){
+      p.value=+old.value;
+      notes.push("lokaler letzter Wert");
+    }
+    if((+p.price||0)<=0 && (+old.price||0)>0 && (+p.shares||0)>0){
+      p.price=+old.price;
+    }
+    if(String(p.sync_warning||"").toLowerCase().includes("dividende") &&
+       (+p.annual_div||0)<=0 && (+old.annual_div||0)>0){
+      p.annual_div=+old.annual_div;
+      if((+old.div_per_share||0)>0)p.div_per_share=+old.div_per_share;
+      notes.push("lokale letzte Dividende");
+    }
+    if(notes.length){
+      p.sync_warning=(p.sync_warning?`${p.sync_warning} · `:"")+`App-Fallback: ${notes.join(", ")}`;
+    }
+    return p;
+  });
+}
+function saveHealth(health,warnings){
+  const payload={
+    health:health||{error_count:0,errors:[]},
+    warnings:Array.isArray(warnings)?warnings:[],
+    saved_at:new Date().toISOString()
+  };
+  localStorage.setItem(HEALTH_KEY,JSON.stringify(payload));
+  renderHealth(payload);
+}
+function loadHealth(){
+  try{return JSON.parse(localStorage.getItem(HEALTH_KEY)||"null")}
+  catch(_){return null}
+}
+function renderHealth(payload=loadHealth()){
+  const banner=document.getElementById("healthBanner");
+  const countEl=document.getElementById("healthCount");
+  const summary=document.getElementById("healthSummary");
+  const list=document.getElementById("healthList");
+  if(!banner||!countEl||!summary||!list)return;
+
+  if(!payload){
+    banner.style.display="none";
+    countEl.textContent="noch nicht geprüft";
+    return;
+  }
+
+  const sheetErrors=Array.isArray(payload.health?.errors)?payload.health.errors:[];
+  const posWarnings=Array.isArray(payload.warnings)?payload.warnings:[];
+  const total=sheetErrors.length+posWarnings.length;
+
+  countEl.textContent=total===0?"0 Fehler":`${total} Hinweise`;
+  summary.textContent=total===0
+    ?"Alle geprüften Tabs sind aktuell fehlerfrei."
+    :`${sheetErrors.length} aktive Sheet-Fehler / Referenzprobleme und ${posWarnings.length} Sync-Fallbacks erkannt.`;
+
+  const items=[];
+  for(const e of sheetErrors.slice(0,15)){
+    items.push(`<div class="healthitem"><b>${esc(e.sheet||"Sheet")}!${esc(e.cell||"")}</b> · ${esc(e.type||"Fehler")}<div class="sub">${esc(e.message||"")}</div></div>`);
+  }
+  for(const w of posWarnings.slice(0,15)){
+    items.push(`<div class="healthitem"><b>${esc(w.broker||"")} · ${esc(w.name||"")}</b><div class="sub warn">${esc(w.message||"")}</div></div>`);
+  }
+  list.innerHTML=items.join("") || '<div class="sub">Keine Fehler gefunden.</div>';
+
+  if(total>0){
+    banner.style.display="block";
+    banner.innerHTML=`⚠ ${total} Datenhinweis${total===1?"":"e"} erkannt. Portfolio OS verwendet bei fehlerhaften Kurs-/Dividendenquellen nach Möglichkeit den letzten gültigen Wert. Details unter Sync → Sheet Health.`;
+  }else{
+    banner.style.display="none";
+  }
+}
+
+function getForm(){return{name:document.getElementById("eName").value.trim(),broker:document.getElementById("eBroker").value.trim()||"Ohne Depot",shares:+document.getElementById("eShares").value||0,value:+document.getElementById("eValue").value||0,annual_div:+document.getElementById("eDiv").value||0,expected_growth:+document.getElementById("eExpectedGrowth").value||0,monthly:+document.getElementById("eMonthly").value||0,price:+document.getElementById("ePrice").value||0,fx:1,div_per_share:0,source:"manual",source_key:"",note:document.getElementById("eNote").value.trim()}}
+function clearForm(){
+  editIndex=null;document.getElementById("editorTitle").textContent="Position hinzufügen";
+  ["eName","eBroker","eNote"].forEach(id=>document.getElementById(id).value="");
+  ["eShares","eValue","eDiv","eMonthly","ePrice"].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById("eExpectedGrowth").value=5;
+  ["eName","eBroker","eShares","eValue","eDiv","eMonthly","ePrice"].forEach(id=>document.getElementById(id).disabled=false);
+}
+function editPos(i){
+  editIndex=i;const p=positions[i];
+  document.getElementById("editorTitle").textContent=p.source==="sheet"?"Sheet-Position: lokale Annahme bearbeiten":"Position bearbeiten";
+  document.getElementById("eName").value=p.name||"";document.getElementById("eBroker").value=p.broker||"";
+  document.getElementById("eShares").value=p.shares||0;document.getElementById("eValue").value=p.value||0;document.getElementById("eDiv").value=p.annual_div||0;
+  document.getElementById("eExpectedGrowth").value=p.expected_growth||0;document.getElementById("eMonthly").value=p.monthly||0;document.getElementById("ePrice").value=p.price||0;document.getElementById("eNote").value=p.note||"";
+  const locked=p.source==="sheet";
+  ["eName","eBroker","eShares","eValue","eDiv","eMonthly","ePrice"].forEach(id=>document.getElementById(id).disabled=locked);
+  switchView("data");window.scrollTo({top:130,behavior:"smooth"});
+}
+function deletePos(i){
+  if(positions[i]?.source==="sheet"){alert("Diese Position kommt aus Google Sheets. Lösche sie dort; beim nächsten Sync verschwindet sie hier.");return}
+  if(!confirm(`"${positions[i].name}" wirklich löschen?`))return;
+  positions.splice(i,1);persist();render();
+}
+function switchView(id){document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.view===id))}
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
+document.getElementById("saveBtn").addEventListener("click",()=>{
+  const p=getForm();
+  if(!p.name){alert("Bitte Positionsnamen eingeben.");return}
+  if(editIndex===null){
+    positions.push(p);
+  }else{
+    const old=positions[editIndex];
+    if(old.source==="sheet"){
+      growthOverrides[growthKey(old)] = p.expected_growth;
+      positions[editIndex] = {...old, expected_growth:p.expected_growth, note:p.note};
+    }else{
+      positions[editIndex]={...old,...p,source:"manual"};
+    }
+  }
+  persist();clearForm();render();
+});
+document.getElementById("cancelBtn").addEventListener("click",clearForm);
+document.getElementById("cashSaveBtn").addEventListener("click",saveCashManual);
+document.getElementById("search").addEventListener("input",renderData);
+["fg","fc","fr"].forEach(id=>document.getElementById(id).addEventListener("input",renderForecast));
+
+document.getElementById("rSaveBtn").addEventListener("click",()=>{const p=getPropertyForm();if(reEditIndex===null)properties.push(p);else properties[reEditIndex]=p;persist();clearPropertyForm();render()});
+document.getElementById("rCancelBtn").addEventListener("click",clearPropertyForm);
+
+document.getElementById("exportBtn").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({exported_at:new Date().toISOString(),positions,properties},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="portfolio-os-v3-backup.json";a.click();URL.revokeObjectURL(a.href);
+});
+document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const x=JSON.parse(await f.text());
+    if(Array.isArray(x)){positions=normalizePositions(x)}
+    else{
+      if(Array.isArray(x.positions))positions=normalizePositions(x.positions);
+      if(Array.isArray(x.properties))properties=x.properties;
+    }
+    persist();render();alert("Import erfolgreich.");
+  }catch(_){alert("Die JSON-Datei konnte nicht gelesen werden.");}
+  e.target.value="";
+});
+
+document.getElementById("saveSyncBtn").addEventListener("click",saveSyncSettings);
+document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSettings();syncFromSheet(false)});
+
+document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("Investment- und Immobiliendaten auf Startwerte zurücksetzen?"))return;positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};persist();clearForm();clearPropertyForm();render()});
+
+function loadSyncSettings(){
+  document.getElementById("syncUrl").value=localStorage.getItem(SYNC_URL_KEY)||"";
+  document.getElementById("syncSecret").value=localStorage.getItem(SYNC_SECRET_KEY)||DEFAULT_SYNC_SECRET;
+}
+function saveSyncSettings(){
+  localStorage.setItem(SYNC_URL_KEY,(document.getElementById("syncUrl").value||"").trim());
+  localStorage.setItem(SYNC_SECRET_KEY,(document.getElementById("syncSecret").value||"").trim());
+  setSyncStatus("Sync-Einstellungen gespeichert.","good");
+}
+function setSyncStatus(msg, cls=""){
+  const el=document.getElementById("syncStatusBox");
+  el.className="note "+cls;el.textContent=msg;
+  const mini=document.getElementById("syncMini");
+  if(mini)mini.textContent=msg;
+}
+function jsonp(url, timeoutMs=15000){
+  return new Promise((resolve,reject)=>{
+    const cb="__portfolioSync_"+Date.now()+"_"+Math.floor(Math.random()*1e6);
+    const s=document.createElement("script");
+    const timer=setTimeout(()=>cleanup(new Error("Timeout beim Google-Sheet-Sync.")),timeoutMs);
+    function cleanup(err,data){
+      clearTimeout(timer);try{delete window[cb]}catch(_){}
+      if(s.parentNode)s.parentNode.removeChild(s);
+      err?reject(err):resolve(data);
+    }
+    window[cb]=(data)=>cleanup(null,data);
+    s.onerror=()=>cleanup(new Error("Sync-Endpunkt konnte nicht geladen werden."));
+    const sep=url.includes("?")?"&":"?";
+    s.src=url+sep+"callback="+encodeURIComponent(cb);
+    document.head.appendChild(s);
+  });
+}
+async function syncFromSheet(isAuto=false){
+  const base=(localStorage.getItem(SYNC_URL_KEY)||document.getElementById("syncUrl")?.value||"").trim();
+  const secret=(localStorage.getItem(SYNC_SECRET_KEY)||document.getElementById("syncSecret")?.value||DEFAULT_SYNC_SECRET).trim();
+  if(!base){
+    if(!isAuto)setSyncStatus("Bitte zuerst die Apps-Script-Web-App-URL eintragen.","warn");
+    return;
+  }
+  try{
+    setSyncStatus("Synchronisiere Google Sheet …");
+    const sep=base.includes("?")?"&":"?";
+    const data=await jsonp(base+sep+"secret="+encodeURIComponent(secret));
+    if(!data||!data.ok)throw new Error(data?.error||"Unbekannter Sync-Fehler");
+    if(Number.isFinite(Number(data.cash_total))){
+      localStorage.setItem(CASH_TOTAL_KEY,String(Number(data.cash_total)));
+      loadCashEditor();
+    }
+    applyPrivateDefaults(data.private_defaults||[]);
+    let incoming=normalizePositions(data.positions||[]).map(p=>{
+      p.source="sheet";
+      const ov=growthOverrides[growthKey(p)];
+      p.expected_growth=Number(ov ?? p.expected_growth ?? defaultExpectedGrowth(p.name));
+      return p;
+    });
+    incoming=applyLocalFallback(incoming);
+
+    const incomingBrokers=new Set(incoming.map(p=>String(p.broker||"")));
+    const manual=positions.filter(p=>{
+      if(p.source==="sheet") return false;
+      if(p.placeholder_group==="scalable_ii" && incomingBrokers.has("Scalable II")) return false;
+      return true;
+    });
+    positions=[...incoming,...manual];
+    saveHealth(data.health||{error_count:0,errors:[]},data.warnings||[]);
+    persist();render();renderHealth();
+
+    const stamp=new Date(data.synced_at||Date.now()).toLocaleString("de-DE");
+    localStorage.setItem("portfolio_os_v4_last_sync",stamp);
+    const warningCount=(data.health?.error_count||0)+(Array.isArray(data.warnings)?data.warnings.length:0);
+    setSyncStatus(`Letzter Sync: ${stamp} · ${incoming.length} Sheet-Positionen${warningCount?` · ⚠ ${warningCount} Hinweise`:""}`,"good");
+  }catch(err){
+    setSyncStatus("Sync fehlgeschlagen: "+String(err.message||err),"bad");
+  }
+}
+
+loadSyncSettings();
+loadCashEditor();
+render();
+renderHealth();
+setTimeout(()=>syncFromSheet(true),250);
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
