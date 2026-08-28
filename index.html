@@ -386,6 +386,16 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
   .metric{font-size:24px}
 }
 
+.growth-kpis{margin-bottom:12px}
+.growth-name{font-size:20px;line-height:1.2;overflow-wrap:anywhere}
+.growth-table{min-width:880px}
+.growth-table th:nth-child(2),.growth-table td:nth-child(2){text-align:right}
+.growth-table th:nth-child(4),.growth-table td:nth-child(4){text-align:left}
+.growth-position{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.growth-rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid #2b394e;border-radius:7px;color:#8f9db0;font-size:10px;font-weight:700;background:rgba(16,24,35,.72)}
+.growth-na-card{margin-top:12px}
+@media(max-width:560px){.growth-name{font-size:18px}}
+
 </style>
 
 <meta name="theme-color" content="#090d14">
@@ -409,6 +419,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
   <div class="nav">
     <button class="active" data-view="dashboard">Dashboard</button>
     <button data-view="portfolio">Portfolio</button>
+    <button data-view="growth">Growth</button>
     <button data-view="analysis">Analyse</button>
     <button data-view="dividends">Dividenden</button>
     <button data-view="forecast">Forecast</button>
@@ -451,6 +462,31 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
       <div class="tablebox"><table>
         <thead><tr><th>Position</th><th>Depots</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Yield</th><th>Expected Div Growth</th><th>Gewicht</th></tr></thead>
         <tbody id="portfolioBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="growth" class="view">
+    <div class="grid4 growth-kpis">
+      <div class="card"><div class="label">Expected Fundamental Growth</div><div class="metric" id="gFundamental">–</div><div class="sub">wertgewichtet nach Positionswert</div></div>
+      <div class="card"><div class="label">Coverage</div><div class="metric" id="gCoverage">–</div><div class="sub" id="gCoverageSub">Anteil mit belastbarer Growth-Annahme</div></div>
+      <div class="card"><div class="label">Highest Growth</div><div class="metric" id="gHighestGrowth">–</div><div class="sub" id="gHighestGrowthSub">Keine Growth-Annahme verfügbar</div></div>
+      <div class="card"><div class="label">Largest Growth Contributor</div><div class="metric growth-name" id="gLargestContributor">–</div><div class="sub" id="gLargestContributorSub">Keine Growth-Annahme verfügbar</div></div>
+    </div>
+
+    <div class="card">
+      <div class="split"><div><h2>Fundamental Growth Ranking</h2><div class="sub">Nach erwarteter Fundamental-Growth-Rate sortiert. Growth-Beitrag = Growth × Portfoliogewicht.</div></div><span class="pill" id="growthCount">0 Positionen</span></div>
+      <div class="tablebox" style="margin-top:12px"><table class="growth-table">
+        <thead><tr><th>Position</th><th>Depotwert</th><th>Gewicht</th><th>Growth Metric</th><th>Expected Fundamental Growth</th><th>Expected Dividend Growth</th><th>Growth-Beitrag</th></tr></thead>
+        <tbody id="growthBody"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card growth-na-card" id="growthNaCard" style="display:none">
+      <div class="split"><div><h2>Ohne Fundamental-Growth-Annahme</h2><div class="sub">Diese Positionen bleiben vollständig außerhalb der Fundamental-Growth-Berechnung.</div></div><span class="pill" id="growthNaCount">0 Positionen</span></div>
+      <div class="tablebox" style="margin-top:12px"><table class="growth-table">
+        <thead><tr><th>Position</th><th>Depotwert</th><th>Gewicht</th><th>Growth Metric</th><th>Expected Dividend Growth</th></tr></thead>
+        <tbody id="growthNaBody"></tbody>
       </table></div>
     </div>
   </section>
@@ -691,7 +727,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v11.2 · Click-Fix + UI Refresh · Asset-Details + Ziele + Zielallokation · Historie, Analyse und Dividendenkalender inklusive.</div>
+  <div class="footer">Portfolio OS v12.1 · Growth-Analyse · Asset-Details + Ziele + Zielallokation · Historie, Analyse und Dividendenkalender inklusive.</div>
 </div>
 
 <script>
@@ -737,16 +773,16 @@ function normalizePositions(arr){
     const fundamentalGrowth=parseMaybePct(prop(p,[
       "fundamental_growth","expected_fundamental_growth","expected_fundamental_growth_3_5y",
       "expected_fundamental_growth_3-5y","Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
-    ]));
+    ]),false);
     const dividendGrowth=parseMaybePct(prop(p,[
       "dividend_growth","expected_dividend_growth","expected_dividend_growth_3_5y",
       "expected_dividend_growth_3-5y",
       "Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
-    ]));
+    ]),false);
     const fcfGrowth=parseMaybePct(prop(p,[
       "fcf_share_growth","fcf_per_share_growth","fcf_share_growth_3_5y",
       "FCF/share Growth 3–5Y","FCF/share Growth 3-5Y"
-    ]));
+    ]),false);
     const expectedGrowth=dividendGrowth ?? parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false) ?? defaultExpectedGrowth(p.name);
     return {...p,
       source: p.source || "manual",
@@ -786,7 +822,7 @@ try{portfolioMeta=JSON.parse(localStorage.getItem(META_KEY)||"[]")||[]}catch(_){
 try{portfolioHistory=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")||[]}catch(_){portfolioHistory=[]}
 let portfolioGrowthKpis=null;
 try{portfolioGrowthKpis=JSON.parse(localStorage.getItem(GROWTH_KPI_KEY)||"null")}catch(_){portfolioGrowthKpis=null}
-let goals=[], goalEditIndex=null, allocationDimension="asset_class", allocationTargets={}, selectedAssetName=null;
+let goals=[], goalEditIndex=null, allocationDimension="asset_class", allocationTargets={}, selectedAssetName=null, assetDetailReturnView="portfolio";
 try{goals=JSON.parse(localStorage.getItem(GOALS_KEY)||"[]")||[]}catch(_){goals=[]}
 try{allocationTargets=JSON.parse(localStorage.getItem(ALLOCATION_KEY)||"{}")||{}}catch(_){allocationTargets={}}
 
@@ -846,17 +882,17 @@ function normalizeGrowthKpis(raw){
   const fundamental=parseMaybePct(prop(raw,[
     "fundamental_growth","expected_fundamental_growth","Expected Fundamental Growth",
     "Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
-  ]));
+  ]),false);
   const dividend=parseMaybePct(prop(raw,[
     "dividend_growth","expected_dividend_growth","Expected Dividend Growth",
     "Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
-  ]));
+  ]),false);
   const fundamentalCoverage=parseMaybePct(prop(raw,[
     "fundamental_growth_coverage","expected_fundamental_growth_coverage","Fundamental Growth Coverage"
-  ]));
+  ]),false);
   const dividendCoverage=parseMaybePct(prop(raw,[
     "dividend_growth_coverage","expected_dividend_growth_coverage","Dividend Growth Coverage"
-  ]));
+  ]),false);
   if(fundamental===null&&dividend===null&&fundamentalCoverage===null&&dividendCoverage===null)return null;
   return {fundamental_growth:fundamental,dividend_growth:dividend,fundamental_growth_coverage:fundamentalCoverage,dividend_growth_coverage:dividendCoverage};
 }
@@ -869,8 +905,8 @@ function extractPortfolioGrowthKpis(data){
   return null;
 }
 function growthTotals(){
-  const fromPositionsFundamental=calcWeightedGrowth("fundamental_growth","value");
-  const fromPositionsDividend=calcWeightedGrowth("expected_dividend_growth","annual_div");
+  const fromPositionsFundamental=calcWeightedGrowth("fundamental_growth","value",false);
+  const fromPositionsDividend=calcWeightedGrowth("expected_dividend_growth","annual_div",false);
   const legacyDividend=calcWeightedGrowth("expected_growth","annual_div",false);
   return {
     fundamentalGrowth:portfolioGrowthKpis?.fundamental_growth ?? fromPositionsFundamental.value,
@@ -912,6 +948,63 @@ function aggregate(){
   }
   return [...m.values()].map(a=>({...a,brokers:[...a.brokers].join(", "),yield:a.value?a.div/a.value*100:0,expected_growth:a.div?a.growthWeight/a.div:0}))
     .sort((a,b)=>b.value-a.value);
+}
+
+function growthPositionRows(){
+  const grouped=new Map();
+  let totalInvested=0;
+  for(const p of positions){
+    const value=Math.max(0,+p.value||0),dividend=Math.max(0,+p.annual_div||0);
+    totalInvested+=value;
+    const key=normName(p.name)||"unbenannt";
+    if(!grouped.has(key))grouped.set(key,{name:p.name||"Unbenannt",value:0,fundamentalWeight:0,fundamentalWeighted:0,dividendWeight:0,dividendWeighted:0,metrics:new Set()});
+    const row=grouped.get(key);
+    row.value+=value;
+    const metric=String(p.growth_metric||"").trim();
+    if(metric)row.metrics.add(metric);
+    const fundamental=parseMaybePct(p.fundamental_growth,false);
+    if(fundamental!==null&&value>0){row.fundamentalWeight+=value;row.fundamentalWeighted+=value*fundamental}
+    const dividendGrowth=parseMaybePct(p.expected_dividend_growth,false);
+    if(dividendGrowth!==null&&dividend>0){row.dividendWeight+=dividend;row.dividendWeighted+=dividend*dividendGrowth}
+  }
+  const rows=[...grouped.values()].map(row=>({
+    name:row.name,
+    value:row.value,
+    weight:totalInvested?row.value/totalInvested*100:0,
+    growthMetric:[...row.metrics].join(" / "),
+    fundamentalGrowth:row.fundamentalWeight?row.fundamentalWeighted/row.fundamentalWeight:null,
+    dividendGrowth:row.dividendWeight?row.dividendWeighted/row.dividendWeight:null,
+    fundamentalWeight:row.fundamentalWeight
+  }));
+  const totalEligible=rows.reduce((sum,row)=>sum+row.fundamentalWeight,0);
+  for(const row of rows)row.contribution=row.fundamentalGrowth===null?null:row.fundamentalGrowth*row.weight/100;
+  const ranked=rows.filter(row=>row.fundamentalGrowth!==null).sort((a,b)=>b.fundamentalGrowth-a.fundamentalGrowth||b.value-a.value);
+  const unrated=rows.filter(row=>row.fundamentalGrowth===null).sort((a,b)=>b.value-a.value);
+  return {ranked,unrated,totalEligible,totalInvested};
+}
+
+function growthCell(value){return value===null||value===undefined||!Number.isFinite(Number(value))?'<span class="data-badge">N/A</span>':pct(value,1)}
+function contributionCell(value){
+  if(value===null||value===undefined||!Number.isFinite(Number(value)))return '<span class="data-badge">N/A</span>';
+  const n=Number(value),cls=n>0?"good":n<0?"bad":"";
+  return `<strong class="${cls}">${n>0?"+":""}${num(n,2)} %-Pkt.</strong>`;
+}
+function renderGrowth(){
+  const data=growthPositionRows(),t=totals(),highest=data.ranked[0]||null;
+  const contributor=data.ranked.slice().sort((a,b)=>(b.contribution??-Infinity)-(a.contribution??-Infinity))[0]||null;
+  document.getElementById("gFundamental").textContent=pctMaybe(t.fundamentalGrowth,1);
+  document.getElementById("gCoverage").textContent=pctMaybe(t.fundamentalCoverage,1);
+  document.getElementById("gCoverageSub").textContent=`${data.ranked.length} von ${data.ranked.length+data.unrated.length} Positionen mit Growth-Annahme`;
+  document.getElementById("gHighestGrowth").textContent=highest?pct(highest.fundamentalGrowth,1):"–";
+  document.getElementById("gHighestGrowthSub").textContent=highest?`${highest.name}${highest.growthMetric?` · ${highest.growthMetric}`:""}`:"Keine Growth-Annahme verfügbar";
+  document.getElementById("gLargestContributor").textContent=contributor?contributor.name:"–";
+  document.getElementById("gLargestContributorSub").textContent=contributor?`${contributor.contribution>=0?"+":""}${num(contributor.contribution,2)} Prozentpunkte · ${pct(contributor.weight,1)} Portfoliogewicht`:"Keine Growth-Annahme verfügbar";
+  document.getElementById("growthCount").textContent=`${data.ranked.length} Position${data.ranked.length===1?"":"en"}`;
+  document.getElementById("growthBody").innerHTML=data.ranked.map((row,index)=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><div class="growth-position"><span class="growth-rank">${index+1}</span><b>${esc(row.name)}</b></div></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${row.growthMetric?esc(row.growthMetric):'<span class="data-badge">N/A</span>'}</td><td>${growthCell(row.fundamentalGrowth)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td></tr>`).join("")||'<tr><td colspan="7" class="empty-state">Noch keine Fundamental-Growth-Daten synchronisiert.</td></tr>';
+  const naCard=document.getElementById("growthNaCard");
+  naCard.style.display=data.unrated.length?"block":"none";
+  document.getElementById("growthNaCount").textContent=`${data.unrated.length} Position${data.unrated.length===1?"":"en"}`;
+  document.getElementById("growthNaBody").innerHTML=data.unrated.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><b>${esc(row.name)}</b></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${row.growthMetric?esc(row.growthMetric):'<span class="data-badge">N/A</span>'}</td><td>${growthCell(row.dividendGrowth)}</td></tr>`).join("");
 }
 function brokerTotals(){
   const m={};
@@ -1052,8 +1145,12 @@ document.addEventListener("click",function(ev){
 function openAssetDetail(name){
   const match=aggregate().find(a=>normName(a.name)===normName(name));
   if(!match)return;
+  const currentView=document.querySelector(".view.active")?.id;
+  if(currentView&&currentView!=="assetdetail")assetDetailReturnView=currentView;
   selectedAssetName=match.name;
   renderAssetDetail(match.name);
+  const backLabel=({growth:"Growth",portfolio:"Portfolio",dividends:"Dividenden",dashboard:"Dashboard",analysis:"Analyse"})[assetDetailReturnView]||"Portfolio";
+  document.getElementById("assetBackBtn").textContent=`← Zurück zu ${backLabel}`;
   switchView("assetdetail");
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1132,7 +1229,7 @@ function render(){
   const divAgg=agg.filter(a=>a.div>0).sort((a,b)=>b.div-a.div);
   document.getElementById("divBody").innerHTML=divAgg.map(a=>`<tr class="asset-row" data-asset="${encodeURIComponent(a.name)}"><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${euro(a.div,2)}</td><td>${pct(t.div?a.div/t.div*100:0,1)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td></tr>`).join("");
 
-  renderForecast();renderData();renderRealEstate();renderAnalysis();renderCalendar();renderHistory();renderGoals();renderAllocation();if(selectedAssetName)renderAssetDetail(selectedAssetName);
+  renderForecast();renderData();renderRealEstate();renderAnalysis();renderGrowth();renderCalendar();renderHistory();renderGoals();renderAllocation();if(selectedAssetName)renderAssetDetail(selectedAssetName);
 }
 function renderForecast(){
   const gv=+document.getElementById("fg").value,growthOverride=gv<0?null:gv,scale=+document.getElementById("fc").value/100,reinvest=+document.getElementById("fr").value===1;
@@ -1407,7 +1504,7 @@ function deletePos(i){
 function switchView(id){document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.view===id))}
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
 document.querySelectorAll(".rangebtn").forEach(b=>b.addEventListener("click",()=>{historyRange=b.dataset.range;renderHistory();}));
-document.getElementById("assetBackBtn").addEventListener("click",()=>{selectedAssetName=null;switchView("portfolio")});
+document.getElementById("assetBackBtn").addEventListener("click",()=>{selectedAssetName=null;switchView(assetDetailReturnView||"portfolio")});
 document.getElementById("newGoalBtn").addEventListener("click",newGoal);
 document.getElementById("goalSaveBtn").addEventListener("click",saveGoal);
 document.getElementById("goalCancelBtn").addEventListener("click",clearGoalForm);
@@ -1530,7 +1627,7 @@ async function syncFromSheet(isAuto=false){
     let incoming=normalizePositions(data.positions||[]).map(p=>{
       p.source="sheet";
       const ov=growthOverrides[growthKey(p)];
-      const sheetDividendGrowth=parseMaybePct(p.expected_dividend_growth);
+      const sheetDividendGrowth=parseMaybePct(p.expected_dividend_growth,false);
       p.expected_growth=sheetDividendGrowth ?? parseMaybePct(ov,false) ?? parseMaybePct(p.expected_growth,false) ?? defaultExpectedGrowth(p.name);
       return p;
     });
