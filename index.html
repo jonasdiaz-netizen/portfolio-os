@@ -6,8 +6,9 @@
 <title>Portfolio OS</title>
 <style>
 :root{
---bg:#0b0e12;--panel:#12171e;--panel2:#171e27;--line:#26303c;--text:#f4f7fb;
---muted:#91a0b2;--accent:#65c7f7;--good:#54d58b;--warn:#f4c95d;--bad:#ff7b7b;
+--bg:#090d14;--panel:#101722;--panel2:#16202e;--line:#253246;--line-soft:#1d2939;
+--text:#f5f7fb;--muted:#8f9db0;--accent:#7297ff;--accent2:#8978f3;--accent-soft:rgba(114,151,255,.12);
+--good:#62d6a5;--warn:#e8bd64;--bad:#ff858b;
 }
 *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#080a0d,#0d1218);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 button,input,select{font:inherit}
@@ -39,19 +40,12 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}.t
 .kpirow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}.mini{padding:12px;border:1px solid var(--line);border-radius:12px;background:#10151b}.mini .label{margin-bottom:5px}.mini strong{font-size:15px}
 .projection{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.projectionbox{border:1px solid var(--line);border-radius:12px;padding:13px;background:#10151b}
 .footer{color:var(--muted);font-size:11px;line-height:1.45;margin:14px 2px}
-@media(max-width:1000px){.grid5,.kpirow{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:900px){.grid5,.grid4,.grid3{grid-template-columns:repeat(2,1fr)}.grid2,.projection{grid-template-columns:1fr}.editor{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.app{padding:14px}.header{align-items:flex-start;flex-direction:column}.grid5,.grid4,.grid3,.kpirow{grid-template-columns:1fr}.editor{grid-template-columns:1fr}.rowbar{grid-template-columns:90px 1fr 75px}}
-
 .history-card{margin-top:12px}.history-toolbar{display:flex;gap:6px;flex-wrap:wrap}.rangebtn{border:1px solid var(--line);background:transparent;color:var(--muted);padding:6px 9px;border-radius:9px;cursor:pointer;font-size:11px}.rangebtn.active{background:var(--panel2);color:var(--text);border-color:#3a4655}.chartbox{height:280px;margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#0f141a;padding:8px;overflow:hidden}.chartbox svg{width:100%;height:100%;display:block}.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
 .analysis-bars .rowbar{grid-template-columns:150px 1fr 90px}.analysis-kpis{margin-bottom:12px}.monthgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:7px;margin-top:10px}.monthcard{border:1px solid var(--line);border-radius:10px;padding:8px 6px;background:#10151b;text-align:center;min-height:112px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:border-color .15s,background .15s,transform .15s}.monthcard:hover{border-color:#3a4655;background:#151c24;transform:translateY(-1px)}.monthcard.active{border-color:var(--accent);background:rgba(101,199,247,.08);box-shadow:0 0 0 1px rgba(101,199,247,.12) inset}.monthbarwrap{height:55px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:6px}.monthbar{width:55%;min-height:2px;background:linear-gradient(180deg,#65c7f7,#54d58b);border-radius:5px 5px 2px 2px}.monthname{font-size:10px;color:var(--muted)}.monthvalue{font-size:11px;font-weight:700;margin-top:3px}.calendar-table{margin-top:12px}.empty-state{padding:24px;text-align:center;color:var(--muted);font-size:12px}.data-badge{display:inline-block;font-size:10px;padding:3px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 
-.asset-row{cursor:pointer}.asset-row:hover td{background:#151c24}.detail-hero{display:grid;grid-template-columns:1.3fr .7fr;gap:12px}.detail-title{font-size:28px;font-weight:800;letter-spacing:-.5px}.detail-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.backbtn{margin-bottom:12px}.detail-brokers{margin-top:12px}.detail-months{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.detail-month{padding:6px 9px;border-radius:9px;border:1px solid var(--line);background:#10151b;font-size:11px}.goal-card{margin-top:12px}.progress{height:10px;background:#222a34;border-radius:99px;overflow:hidden;margin:10px 0}.progress span{display:block;height:100%;background:linear-gradient(90deg,#65c7f7,#54d58b)}.goal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.goal-actions{display:flex;gap:7px;flex-wrap:wrap}.goal-eta{font-size:14px;font-weight:750}.form-section{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.checkline{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}.checkline input{width:auto}.allocation-controls{display:grid;grid-template-columns:1fr 1fr auto auto;gap:9px;align-items:end}.allocation-target{width:84px;background:#0f141a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:7px 8px;text-align:right}.alloc-positive{color:var(--good)}.alloc-negative{color:var(--bad)}.alloc-neutral{color:var(--muted)}.goaltype{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:4px 7px;border-radius:999px}.tiny{font-size:10px;color:var(--muted)}
-@media(max-width:1000px){.goal-grid{grid-template-columns:repeat(2,1fr)}.allocation-controls{grid-template-columns:1fr 1fr}}
-@media(max-width:900px){.monthgrid{grid-template-columns:repeat(6,1fr)}}
-@media(max-width:560px){.monthgrid{grid-template-columns:repeat(4,1fr)}.analysis-bars .rowbar{grid-template-columns:100px 1fr 72px}.chartbox{height:240px}.detail-hero{grid-template-columns:1fr}.goal-grid{grid-template-columns:1fr}.allocation-controls{grid-template-columns:1fr}.allocation-target{width:72px}}
+.asset-row{cursor:pointer}.asset-row:hover td{background:#151c24}.detail-hero{display:grid;grid-template-columns:1.3fr .7fr;gap:12px}.detail-title{font-size:28px;font-weight:800;letter-spacing:-.5px}.detail-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.backbtn{margin-bottom:12px}.detail-brokers{margin-top:12px}.detail-months{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.detail-month{padding:6px 9px;border-radius:9px;border:1px solid var(--line);background:#10151b;font-size:11px}.goal-card{margin-top:12px}.progress{height:10px;background:#222a34;border-radius:99px;overflow:hidden;margin:10px 0}.progress span{display:block;height:100%;background:linear-gradient(90deg,#65c7f7,#54d58b)}.goal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.goal-actions{display:flex;gap:7px;flex-wrap:wrap}.goal-eta{font-size:14px;font-weight:750}.checkline{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}.checkline input{width:auto}.allocation-controls{display:grid;grid-template-columns:1fr 1fr auto auto;gap:9px;align-items:end}.allocation-target{width:84px;background:#0f141a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:7px 8px;text-align:right}.alloc-positive{color:var(--good)}.alloc-negative{color:var(--bad)}.alloc-neutral{color:var(--muted)}.goaltype{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:4px 7px;border-radius:999px}.tiny{font-size:10px;color:var(--muted)}
 
-/* v11.2 · clickable asset affordance */
+/* Clickable asset affordance */
 tr.asset-row td:first-child b::after,
 b.asset-row::after{
   content:"  ›";
@@ -62,26 +56,7 @@ b.asset-row::after{
 tr.asset-row:hover td:first-child b::after,
 b.asset-row:hover::after{opacity:1}
 
-</style>
-<style>
-
-/* ===== Portfolio OS v11.1 · restrained fintech UI refresh ===== */
-:root{
-  --bg:#090d14;
-  --panel:#101722;
-  --panel2:#16202e;
-  --line:#253246;
-  --line-soft:#1d2939;
-  --text:#f5f7fb;
-  --muted:#8f9db0;
-  --accent:#7297ff;
-  --accent2:#8978f3;
-  --accent-soft:rgba(114,151,255,.12);
-  --good:#62d6a5;
-  --warn:#e8bd64;
-  --bad:#ff858b;
-}
-
+/* ===== Portfolio OS theme ===== */
 html{background:var(--bg)}
 body{
   background:
@@ -366,26 +341,6 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
   background:rgba(232,189,100,.055);
 }
 
-/* mobile: nav remains compact and horizontally scrollable */
-@media(max-width:900px){
-  .app{padding:20px 17px 28px}
-}
-@media(max-width:560px){
-  .app{padding:15px 12px 24px}
-  .brand h1{font-size:26px}
-  .header{gap:10px}
-  .nav{
-    top:5px;
-    width:calc(100vw - 24px);
-    border-radius:12px;
-    margin-left:0;
-    padding:4px;
-  }
-  .nav button{padding:8px 10px}
-  .card{border-radius:13px;padding:14px}
-  .metric{font-size:24px}
-}
-
 .growth-kpis{margin-bottom:12px}
 .growth-name{font-size:20px;line-height:1.2;overflow-wrap:anywhere}
 .growth-table{min-width:880px}
@@ -419,8 +374,43 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
 .diagnostic-grid .mini strong{display:block;margin-top:2px}
 .source-badge-sheet{color:var(--good);border-color:rgba(98,214,165,.28)}
 .source-badge-fallback{color:var(--warn);border-color:rgba(232,189,100,.30)}
-@media(max-width:900px){.dashboard-overview{grid-template-columns:1fr}.overview-stats{grid-template-columns:repeat(2,1fr)}.diagnostic-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.growth-name{font-size:18px}.net-worth-metric{font-size:31px}.overview-stats{grid-template-columns:1fr 1fr}.overview-stat{padding:10px}.contribution-row{grid-template-columns:minmax(92px,1.1fr) 1fr 76px;gap:7px}.diagnostic-grid{grid-template-columns:1fr 1fr}}
+
+/* Responsive layout */
+@media(max-width:1000px){
+  .grid5,.kpirow{grid-template-columns:repeat(3,1fr)}
+  .goal-grid{grid-template-columns:repeat(2,1fr)}
+  .allocation-controls{grid-template-columns:1fr 1fr}
+}
+@media(max-width:900px){
+  .app{padding:20px 17px 28px}
+  .grid5,.grid4,.grid3{grid-template-columns:repeat(2,1fr)}
+  .grid2,.projection{grid-template-columns:1fr}
+  .editor{grid-template-columns:repeat(2,1fr)}
+  .monthgrid{grid-template-columns:repeat(6,1fr)}
+  .dashboard-overview{grid-template-columns:1fr}
+  .overview-stats,.diagnostic-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .app{padding:15px 12px 24px}
+  .header{align-items:flex-start;flex-direction:column;gap:10px}
+  .brand h1{font-size:26px}
+  .nav{top:5px;width:calc(100vw - 24px);border-radius:12px;margin-left:0;padding:4px}
+  .nav button{padding:8px 10px}
+  .card{border-radius:13px;padding:14px}
+  .metric{font-size:24px}
+  .grid5,.grid4,.grid3,.kpirow,.editor{grid-template-columns:1fr}
+  .rowbar{grid-template-columns:90px 1fr 75px}
+  .monthgrid{grid-template-columns:repeat(4,1fr)}
+  .analysis-bars .rowbar{grid-template-columns:100px 1fr 72px}
+  .chartbox{height:240px}
+  .detail-hero,.goal-grid,.allocation-controls{grid-template-columns:1fr}
+  .allocation-target{width:72px}
+  .growth-name{font-size:18px}
+  .net-worth-metric{font-size:31px}
+  .overview-stats,.diagnostic-grid{grid-template-columns:1fr 1fr}
+  .overview-stat{padding:10px}
+  .contribution-row{grid-template-columns:minmax(92px,1.1fr) 1fr 76px;gap:7px}
+}
 
 </style>
 
@@ -499,7 +489,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
       </div>
     </div>
     <div class="card history-card">
-      <div class="split"><div><h2>Portfolio-Historie</h2><div class="sub" id="historySummary">Startet mit dem ersten v10-Sync.</div></div><div class="history-toolbar"><button class="rangebtn" data-range="1M">1M</button><button class="rangebtn active" data-range="3M">3M</button><button class="rangebtn" data-range="YTD">YTD</button><button class="rangebtn" data-range="1Y">1J</button><button class="rangebtn" data-range="MAX">Max</button></div></div>
+      <div class="split"><div><h2>Portfolio-Historie</h2><div class="sub" id="historySummary">Startet mit dem ersten erfolgreichen Sync.</div></div><div class="history-toolbar"><button class="rangebtn" data-range="1M">1M</button><button class="rangebtn active" data-range="3M">3M</button><button class="rangebtn" data-range="YTD">YTD</button><button class="rangebtn" data-range="1Y">1J</button><button class="rangebtn" data-range="MAX">Max</button></div></div>
       <div class="chartbox" id="historyChart"></div>
       <div class="chart-legend"><span>Financial Assets: <b id="historyLatest">–</b></span><span>Zeitraum: <b id="historyDelta">–</b></span><span>Datenpunkte: <b id="historyCount">0</b></span></div>
     </div>
@@ -763,7 +753,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
         <div class="split"><span class="label">Manuelle Positionen</span><strong>lokal in der App</strong></div>
         <div class="split"><span class="label">Immobilien</span><strong>lokal in der App</strong></div>
         <div class="split"><span class="label">Cash</span><strong>privater Sheet-Sync</strong></div>
-        <div class="sub" style="margin-top:12px">Ein Sync ersetzt nur Sheet-Positionen. Manuelle Positionen und Immobilien bleiben erhalten. Bei Datenquellenfehlern verwendet v9 nach Möglichkeit den letzten gültigen Wert.</div>
+        <div class="sub" style="margin-top:12px">Ein Sync ersetzt nur Sheet-Positionen. Manuelle Positionen und Immobilien bleiben erhalten. Bei Datenquellenfehlern verwendet die App nach Möglichkeit den letzten gültigen Wert.</div>
       </div>
     </div>
 
@@ -782,7 +772,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
 
     <div class="card" style="margin-top:12px">
       <div class="split"><h2>Sheet Health</h2><span class="pill" id="healthCount">noch nicht geprüft</span></div>
-      <div id="healthSummary" class="sub">Der private v10-Sync prüft beim Synchronisieren alle Tabs auf aktive Fehler und kaputte Referenzen.</div>
+      <div id="healthSummary" class="sub">Der private Sync prüft beim Synchronisieren alle Tabs auf aktive Fehler und kaputte Referenzen.</div>
       <div id="healthList" style="margin-top:10px"></div>
     </div>
 
@@ -790,7 +780,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
       <h2>Einmalige Einrichtung</h2>
       <div class="sub" style="line-height:1.7">
         1. Öffne Google Apps Script und erstelle ein neues Projekt.<br>
-        2. Füge die mitgelieferte Datei <b>portfolio_os_PRIVATE_google_sync_v10.gs</b> als Code ein.<br>
+        2. Füge die aktuelle Datei <b>portfolio_os_google_sync_v12.gs</b> als Code ein.<br>
         3. Bereitstellen → Neue Bereitstellung → Web-App.<br>
         4. Ausführen als: <b>Ich</b> · Zugriff: <b>Jeder</b>.<br>
         5. Die erzeugte Web-App-URL hier oben einfügen.<br><br>
@@ -799,7 +789,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v13.2 · Gesamtportfolio-Dashboard · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v14.0 · Gesamtportfolio-Dashboard · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -918,6 +908,11 @@ function pct(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{minimumFract
 function num(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{maximumFractionDigits:dec})}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function pctMaybe(x,dec=1){return x===null||x===undefined||!Number.isFinite(Number(x))?"–":pct(x,dec)}
+function finiteOr(value,fallback=0){
+  if(value===null||value===undefined||value==="")return fallback;
+  const number=Number(value);
+  return Number.isFinite(number)?number:fallback;
+}
 function coverageText(value,base){
   return value===null||value===undefined||!Number.isFinite(Number(value))?base:`${base} · Coverage ${pct(value,1)}`;
 }
@@ -976,15 +971,22 @@ function extractPortfolioGrowthKpis(data){
   }
   return null;
 }
+function hasDirectDividendGrowth(){
+  return positions.some(p=>(+p.annual_div||0)>0&&parseMaybePct(p.expected_dividend_growth,false)!==null);
+}
+function effectiveDividendGrowth(p,useDirect=hasDirectDividendGrowth()){
+  return parseMaybePct(useDirect?p.expected_dividend_growth:p.expected_growth,false);
+}
 function growthTotals(){
   const fromPositionsFundamental=calcWeightedGrowth("fundamental_growth","value",false);
   const fromPositionsDividend=calcWeightedGrowth("expected_dividend_growth","annual_div",false);
   const legacyDividend=calcWeightedGrowth("expected_growth","annual_div",false);
+  const effectivePositionsDividend=fromPositionsDividend.value!==null?fromPositionsDividend:legacyDividend;
   return {
     fundamentalGrowth:portfolioGrowthKpis?.fundamental_growth ?? fromPositionsFundamental.value,
     fundamentalCoverage:portfolioGrowthKpis?.fundamental_growth_coverage ?? fromPositionsFundamental.coverage,
-    dividendGrowth:portfolioGrowthKpis?.dividend_growth ?? fromPositionsDividend.value ?? legacyDividend.value ?? 0,
-    dividendGrowthCoverage:portfolioGrowthKpis?.dividend_growth_coverage ?? fromPositionsDividend.coverage
+    dividendGrowth:portfolioGrowthKpis?.dividend_growth ?? effectivePositionsDividend.value,
+    dividendGrowthCoverage:portfolioGrowthKpis?.dividend_growth_coverage ?? effectivePositionsDividend.coverage
   };
 }
 
@@ -1024,6 +1026,7 @@ function aggregate(){
 
 function growthPositionRows(){
   const grouped=new Map();
+  const useDirectDividend=hasDirectDividendGrowth();
   let totalInvested=0;
   for(const p of positions){
     const value=Math.max(0,+p.value||0),dividend=Math.max(0,+p.annual_div||0);
@@ -1036,7 +1039,7 @@ function growthPositionRows(){
     if(metric)row.metrics.add(metric);
     const fundamental=parseMaybePct(p.fundamental_growth,false);
     if(fundamental!==null&&value>0){row.fundamentalWeight+=value;row.fundamentalWeighted+=value*fundamental}
-    const dividendGrowth=parseMaybePct(p.expected_dividend_growth,false);
+    const dividendGrowth=effectiveDividendGrowth(p,useDirectDividend);
     if(dividendGrowth!==null&&dividend>0){row.dividendWeight+=dividend;row.dividendWeighted+=dividend*dividendGrowth}
     const fcfGrowth=parseMaybePct(p.fcf_share_growth,false);
     if(fcfGrowth!==null&&value>0){row.fcfWeight+=value;row.fcfWeighted+=value*fcfGrowth}
@@ -1051,11 +1054,13 @@ function growthPositionRows(){
     fcfGrowth:row.fcfWeight?row.fcfWeighted/row.fcfWeight:null,
     fundamentalWeight:row.fundamentalWeight
   }));
-  const totalEligible=rows.reduce((sum,row)=>sum+row.fundamentalWeight,0);
-  for(const row of rows)row.contribution=row.fundamentalGrowth===null?null:row.fundamentalGrowth*row.weight/100;
+  for(const row of rows){
+    const coveredPortfolioWeight=totalInvested?row.fundamentalWeight/totalInvested*100:0;
+    row.contribution=row.fundamentalGrowth===null?null:row.fundamentalGrowth*coveredPortfolioWeight/100;
+  }
   const ranked=rows.filter(row=>row.fundamentalGrowth!==null).sort((a,b)=>b.fundamentalGrowth-a.fundamentalGrowth||b.value-a.value);
   const unrated=rows.filter(row=>row.fundamentalGrowth===null).sort((a,b)=>b.value-a.value);
-  return {ranked,unrated,totalEligible,totalInvested};
+  return {ranked,unrated};
 }
 
 function growthCell(value){return value===null||value===undefined||!Number.isFinite(Number(value))?'<span class="data-badge">N/A</span>':pct(value,1)}
@@ -1066,29 +1071,30 @@ function contributionCell(value){
 }
 function renderContributionBars(id,rows,valueField="contribution",limit=10){
   const el=document.getElementById(id);if(!el)return;
-  const valid=(rows||[]).filter(row=>Number.isFinite(Number(row[valueField]))).sort((a,b)=>Number(b[valueField])-Number(a[valueField])).slice(0,limit);
+  const valid=(rows||[]).filter(row=>row[valueField]!==null&&row[valueField]!==undefined&&Number.isFinite(Number(row[valueField]))).sort((a,b)=>Number(b[valueField])-Number(a[valueField])).slice(0,limit);
   if(!valid.length){el.innerHTML='<div class="empty-state">Noch keine Growth-Beiträge verfügbar.</div>';return}
   const max=Math.max(...valid.map(row=>Math.abs(Number(row[valueField]))),.01);
   el.innerHTML=valid.map(row=>{const value=Number(row[valueField]);return `<div class="contribution-row asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><div class="contribution-name"><b>${esc(row.name)}</b><div class="tiny">${row.rateLabel?esc(row.rateLabel):""}</div></div><div class="contribution-track"><span class="contribution-fill${value<0?" negative":""}" style="width:${Math.max(2,Math.abs(value)/max*100)}%"></span></div><div class="contribution-value ${value>0?"good":value<0?"bad":""}">${value>0?"+":""}${num(value,2)} Pkt.</div></div>`}).join("");
 }
 function dividendGrowthRows(){
-  const grouped=new Map();let totalDividend=0;
+  const grouped=new Map(),useDirect=hasDirectDividendGrowth();let totalDividend=0;
   for(const p of positions){
     const dividend=Math.max(0,+p.annual_div||0);if(dividend<=0)continue;
     totalDividend+=dividend;
     const key=normName(p.name)||"unbenannt";
-    if(!grouped.has(key))grouped.set(key,{name:p.name||"Unbenannt",brokers:new Set(),value:0,dividend:0,growthWeight:0,growthWeighted:0,directWeight:0,fallbackWeight:0});
+    if(!grouped.has(key))grouped.set(key,{name:p.name||"Unbenannt",brokers:new Set(),value:0,dividend:0,growthWeight:0,growthWeighted:0});
     const row=grouped.get(key);row.brokers.add(p.broker||"–");row.value+=Math.max(0,+p.value||0);row.dividend+=dividend;
-    const direct=parseMaybePct(p.expected_dividend_growth,false),fallback=parseMaybePct(p.expected_growth,false),growth=direct??fallback;
-    if(growth!==null){row.growthWeight+=dividend;row.growthWeighted+=dividend*growth;if(direct!==null)row.directWeight+=dividend;else row.fallbackWeight+=dividend}
+    const growth=effectiveDividendGrowth(p,useDirect);
+    if(growth!==null){row.growthWeight+=dividend;row.growthWeighted+=dividend*growth}
   }
   return [...grouped.values()].map(row=>{
     const dividendGrowth=row.growthWeight?row.growthWeighted/row.growthWeight:null,dividendShare=totalDividend?row.dividend/totalDividend*100:0;
-    const source=row.directWeight&&row.fallbackWeight?"Sheet + Fallback":row.directWeight?"Sheet":"Fallback";
-    return {...row,brokers:[...row.brokers].join(", "),dividendGrowth,dividendShare,yield:row.value?row.dividend/row.value*100:0,source,contribution:dividendGrowth===null?null:dividendGrowth*dividendShare/100,rateLabel:dividendGrowth===null?"":`${pct(dividendGrowth,1)} Growth · ${pct(dividendShare,1)} Div.-Anteil`};
+    const coveredDividendShare=totalDividend?row.growthWeight/totalDividend*100:0,source=dividendGrowth===null?"N/A":useDirect?"Sheet":"Fallback";
+    return {...row,brokers:[...row.brokers].join(", "),dividendGrowth,dividendShare,coveredDividendShare,yield:row.value?row.dividend/row.value*100:0,source,contribution:dividendGrowth===null?null:dividendGrowth*coveredDividendShare/100,rateLabel:dividendGrowth===null?"":`${pct(dividendGrowth,1)} Growth · ${pct(coveredDividendShare,1)} abgedeckter Div.-Anteil`};
   }).sort((a,b)=>(b.contribution??-Infinity)-(a.contribution??-Infinity)||b.dividend-a.dividend);
 }
 function growthSourceBadge(source){
+  if(!source||source==="N/A")return '<span class="data-badge">N/A</span>';
   const isFallback=String(source).includes("Fallback"),cls=isFallback?"source-badge-fallback":"source-badge-sheet";
   return `<span class="data-badge ${cls}">${esc(source||"–")}</span>`;
 }
@@ -1115,11 +1121,12 @@ function renderGrowth(){
   document.getElementById("growthNaBody").innerHTML=data.unrated.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><b>${esc(row.name)}</b></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${row.growthMetric?esc(row.growthMetric):'<span class="data-badge">N/A</span>'}</td><td>${growthCell(row.dividendGrowth)}</td></tr>`).join("");
 }
 function renderDividends(){
-  const t=totals(),rows=dividendGrowthRows();
+  const t=totals(),rows=dividendGrowthRows(),drivers=rows.filter(row=>row.contribution!==null&&Number.isFinite(Number(row.contribution)));
   document.getElementById("dAnnual").textContent=euro(t.div);document.getElementById("dMonthly").textContent=euro(t.div/12);document.getElementById("dYield").textContent=pct(t.yield);document.getElementById("dGrowth").textContent=pctMaybe(t.expGrowth,1);document.getElementById("dGrowthCoverage").textContent=pctMaybe(t.dividendGrowthCoverage,1);
-  document.getElementById("divGrowthCount").textContent=`${rows.length} Treiber`;
-  const top=rows[0]||null;document.getElementById("divGrowthSummary").textContent=top?`${top.name} ist aktuell der größte Dividend-Growth-Treiber mit ${top.contribution>=0?"+":""}${num(top.contribution,2)} Prozentpunkten Beitrag.`:"Welche Positionen das erwartete Wachstum deiner Jahresdividende am stärksten treiben.";
-  renderContributionBars("divGrowthContributionBars",rows);
+  document.getElementById("divGrowthCount").textContent=`${drivers.length} Treiber`;
+  const top=drivers[0]||null,coveredContribution=drivers.reduce((sum,row)=>sum+row.contribution,0);
+  document.getElementById("divGrowthSummary").textContent=top?`${top.name} ist aktuell der größte Treiber. Abgedeckter Beitrag zur Gesamtdividende: ${coveredContribution>=0?"+":""}${num(coveredContribution,2)} Prozentpunkte; der KPI wird innerhalb der Coverage normiert.`:"Welche Positionen das erwartete Wachstum deiner Jahresdividende am stärksten treiben.";
+  renderContributionBars("divGrowthContributionBars",drivers);
   document.getElementById("divBody").innerHTML=rows.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}"><td><b>${esc(row.name)}</b></td><td>${esc(row.brokers)}</td><td>${euro(row.dividend,2)}</td><td>${pct(row.dividendShare,1)}</td><td>${pct(row.yield)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td><td>${growthSourceBadge(row.source)}</td></tr>`).join("")||'<tr><td colspan="8" class="empty-state">Noch keine Dividendenzahler vorhanden.</td></tr>';
 }
 function brokerTotals(){
@@ -1159,13 +1166,12 @@ function monthsBetween(start,end){
   if(isNaN(a)||isNaN(b)||b<=a)return 0;
   return Math.max(0,(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())+(b.getDate()>=a.getDate()?0:-1));
 }
-function loanProjection(p){
+function projectLoanForMonths(p,months){
   let balance=Math.max(0,+p.remaining_debt||0);
   const annualRate=(+p.interest_rate||0)/100;
   const monthlyRate=annualRate/12;
   let payment=+p.monthly_payment||0;
   if(payment<=0)payment=balance*((+p.interest_rate||0)+(+p.initial_repayment||0))/100/12;
-  const months=monthsBetween(p.debt_as_of||"2026-08-11",p.target_date||"2033-12-31");
   let totalInterest=0,totalPrincipal=0, first12Principal=0;
   for(let i=0;i<months && balance>0;i++){
     const interest=balance*monthlyRate;
@@ -1176,18 +1182,26 @@ function loanProjection(p){
   }
   return {balance,months,payment,totalInterest,totalPrincipal,first12Principal};
 }
+function loanProjection(p){
+  const months=monthsBetween(p.debt_as_of||"2026-08-11",p.target_date||"2033-12-31");
+  return projectLoanForMonths(p,months);
+}
 function propertyValueAtTarget(p){
   const months=monthsBetween(p.debt_as_of||"2026-08-11",p.target_date||"2033-12-31");
   return (+p.current_value||0)*Math.pow(1+(+p.value_growth||0)/100,months/12);
 }
-function propertyCashflow(p){
-  const proj=loanProjection(p);
+function propertyCashflow(p,proj=loanProjection(p)){
   return (+p.monthly_rent||0)-(+p.monthly_expenses||0)-(+p.monthly_reserve||0)-proj.payment;
 }
 function propertyTotals(){
-  let value=0,debt=0,cash=0,targetDebt=0,targetValue=0;
-  for(const p of properties){value+=(+p.current_value||0);debt+=(+p.remaining_debt||0);cash+=propertyCashflow(p);targetDebt+=loanProjection(p).balance;targetValue+=propertyValueAtTarget(p)}
-  return {value,debt,equity:value-debt,cash,targetDebt,targetValue,targetEquity:targetValue-targetDebt};
+  let value=0,debt=0,cash=0;
+  for(const p of properties){
+    const projection=loanProjection(p);
+    value+=+p.current_value||0;
+    debt+=+p.remaining_debt||0;
+    cash+=propertyCashflow(p,projection);
+  }
+  return {value,debt,equity:value-debt,cash};
 }
 
 
@@ -1199,13 +1213,13 @@ function analysisRows(){
   const cash=getCashTotal();if(cash>0)rows.push({name:"Cash",value:cash,sector:"Cash",region:"Cash",asset_class:"Cash",covered:true});
   return rows.filter(x=>x.value>0);
 }
-function analysisBucket(field){const m=new Map();for(const r of analysisRows())m.set(r[field]||"Nicht zugeordnet",(m.get(r[field]||"Nicht zugeordnet")||0)+r.value);return [...m.entries()].sort((a,b)=>b[1]-a[1])}
+function analysisBucket(rows,field){const m=new Map();for(const r of rows)m.set(r[field]||"Nicht zugeordnet",(m.get(r[field]||"Nicht zugeordnet")||0)+r.value);return [...m.entries()].sort((a,b)=>b[1]-a[1])}
 function renderAnalysisBars(id,entries,total){const el=document.getElementById(id);if(!el)return;if(!entries.length){el.innerHTML='<div class="empty-state">Noch keine Analysedaten.</div>';return}const max=entries[0][1]||1;el.innerHTML=entries.map(([k,v])=>`<div class="rowbar"><div title="${esc(k)}">${esc(k)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${pct(total?v/total*100:0,1)}</div></div>`).join("")}
 function renderAnalysis(){
   const t=totals(),rows=analysisRows(),total=rows.reduce((a,x)=>a+x.value,0),agg=aggregate().filter(x=>x.value>0),largest=agg[0]||{name:"–",value:0},top10=agg.slice(0,10).reduce((a,x)=>a+x.value,0),covered=rows.filter(x=>x.covered).reduce((a,x)=>a+x.value,0);
   const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val};
   set("aLargest",pct(t.investedValue?largest.value/t.investedValue*100:0,1));set("aLargestName",largest.name||"–");set("aTop10",pct(t.investedValue?top10/t.investedValue*100:0,1));set("aCash",pct(t.financialValue?t.cash/t.financialValue*100:0,1));set("aCoverage",pct(total?covered/total*100:0,0));
-  renderAnalysisBars("sectorBars",analysisBucket("sector"),total);renderAnalysisBars("regionBars",analysisBucket("region"),total);renderAnalysisBars("assetBars",analysisBucket("asset_class"),total);
+  renderAnalysisBars("sectorBars",analysisBucket(rows,"sector"),total);renderAnalysisBars("regionBars",analysisBucket(rows,"region"),total);renderAnalysisBars("assetBars",analysisBucket(rows,"asset_class"),total);
 }
 function calendarData(){
   const mm=metaLookup(),months=Array(12).fill(0),events=[],unassigned=[];
@@ -1233,22 +1247,74 @@ function renderCalendar(){
   }
 }
 function filteredHistory(){
-  const arr=(portfolioHistory||[]).filter(x=>x&&x.date&&Number.isFinite(Number(x.financial_assets))).sort((a,b)=>String(a.date).localeCompare(String(b.date)));if(!arr.length)return [];
-  const lastDate=new Date(arr[arr.length-1].date+"T00:00:00");let start=null;if(historyRange==="1M")start=new Date(lastDate.getTime()-31*86400000);if(historyRange==="3M")start=new Date(lastDate.getTime()-92*86400000);if(historyRange==="1Y")start=new Date(lastDate.getTime()-366*86400000);if(historyRange==="YTD")start=new Date(lastDate.getFullYear(),0,1);return start?arr.filter(x=>new Date(x.date+"T00:00:00")>=start):arr;
+  const entries=(portfolioHistory||[])
+    .filter(entry=>entry&&entry.date&&Number.isFinite(Number(entry.financial_assets)))
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  if(!entries.length)return [];
+
+  const lastDate=new Date(entries.at(-1).date+"T00:00:00");
+  const ranges={"1M":31,"3M":92,"1Y":366};
+  let start=ranges[historyRange]?new Date(lastDate.getTime()-ranges[historyRange]*86400000):null;
+  if(historyRange==="YTD")start=new Date(lastDate.getFullYear(),0,1);
+  return start?entries.filter(entry=>new Date(entry.date+"T00:00:00")>=start):entries;
 }
 function renderHistory(){
-  document.querySelectorAll(".rangebtn").forEach(b=>b.classList.toggle("active",b.dataset.range===historyRange));const el=document.getElementById("historyChart"),arr=filteredHistory();if(!el)return;
-  if(!arr.length){el.innerHTML='<div class="empty-state">Die Historie startet mit dem ersten Sync über Apps Script v10.</div>';["historyLatest","historyDelta"].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent="–"});const c=document.getElementById("historyCount");if(c)c.textContent="0";return}
-  const vals=arr.map(x=>+x.financial_assets||0),first=vals[0],last=vals[vals.length-1],delta=last-first,dp=first?delta/first*100:0;document.getElementById("historyLatest").textContent=euro(last);const de=document.getElementById("historyDelta");de.textContent=`${delta>=0?"+":""}${euro(delta)} (${dp>=0?"+":""}${pct(dp,1)})`;de.className=delta>=0?"good":"bad";document.getElementById("historyCount").textContent=String(arr.length);document.getElementById("historySummary").textContent=`${new Date(arr[0].date+"T00:00:00").toLocaleDateString("de-DE")} bis ${new Date(arr[arr.length-1].date+"T00:00:00").toLocaleDateString("de-DE")}`;
-  const W=900,H=260,L=58,R=18,T=18,B=36;let min=Math.min(...vals),max=Math.max(...vals);if(max===min){max=max?max*1.01:1;min=min?min*.99:0}const x=i=>L+(arr.length===1?(W-L-R)/2:i*(W-L-R)/(arr.length-1)),y=v=>T+(max-v)*(H-T-B)/(max-min),pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" "),area=`${L},${H-B} ${pts} ${x(arr.length-1)},${H-B}`;let grid="";for(let i=0;i<4;i++){const gv=min+(max-min)*i/3,gy=y(gv);grid+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="#26303c" stroke-width="1"/><text x="4" y="${gy+4}" fill="#91a0b2" font-size="11">${Math.round(gv/1000)}k</text>`}const dots=arr.length<=40?vals.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="#65c7f7"/>`).join(""):"";el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}<polygon points="${area}" fill="rgba(101,199,247,.10)"/><polyline points="${pts}" fill="none" stroke="#65c7f7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}<text x="${L}" y="${H-10}" fill="#91a0b2" font-size="11">${new Date(arr[0].date+"T00:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</text><text x="${W-R}" y="${H-10}" text-anchor="end" fill="#91a0b2" font-size="11">${new Date(arr[arr.length-1].date+"T00:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</text></svg>`;
+  document.querySelectorAll(".rangebtn").forEach(button=>button.classList.toggle("active",button.dataset.range===historyRange));
+  const chart=document.getElementById("historyChart"),entries=filteredHistory();
+  if(!chart)return;
+  if(!entries.length){
+    chart.innerHTML='<div class="empty-state">Die Historie startet mit dem ersten erfolgreichen Sync.</div>';
+    ["historyLatest","historyDelta"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="–"});
+    const count=document.getElementById("historyCount");if(count)count.textContent="0";
+    return;
+  }
+
+  const values=entries.map(entry=>+entry.financial_assets||0);
+  const first=values[0],last=values.at(-1),delta=last-first,deltaPercent=first?delta/first*100:0;
+  document.getElementById("historyLatest").textContent=euro(last);
+  const deltaElement=document.getElementById("historyDelta");
+  deltaElement.textContent=`${delta>=0?"+":""}${euro(delta)} (${deltaPercent>=0?"+":""}${pct(deltaPercent,1)})`;
+  deltaElement.className=delta>=0?"good":"bad";
+  document.getElementById("historyCount").textContent=String(entries.length);
+  document.getElementById("historySummary").textContent=`${new Date(entries[0].date+"T00:00:00").toLocaleDateString("de-DE")} bis ${new Date(entries.at(-1).date+"T00:00:00").toLocaleDateString("de-DE")}`;
+
+  const W=900,H=260,L=58,R=18,T=18,B=36;
+  let min=Math.min(...values),max=Math.max(...values);
+  if(max===min){max=max?max*1.01:1;min=min?min*.99:0}
+  const x=index=>L+(entries.length===1?(W-L-R)/2:index*(W-L-R)/(entries.length-1));
+  const y=value=>T+(max-value)*(H-T-B)/(max-min);
+  const points=values.map((value,index)=>`${x(index).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
+  const area=`${L},${H-B} ${points} ${x(entries.length-1)},${H-B}`;
+  let grid="";
+  for(let index=0;index<4;index++){
+    const gridValue=min+(max-min)*index/3,gridY=y(gridValue);
+    grid+=`<line x1="${L}" y1="${gridY}" x2="${W-R}" y2="${gridY}" stroke="#26303c" stroke-width="1"/><text x="4" y="${gridY+4}" fill="#91a0b2" font-size="11">${Math.round(gridValue/1000)}k</text>`;
+  }
+  const dots=entries.length<=40?values.map((value,index)=>`<circle cx="${x(index)}" cy="${y(value)}" r="3" fill="#65c7f7"/>`).join(""):"";
+  const firstLabel=new Date(entries[0].date+"T00:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
+  const lastLabel=new Date(entries.at(-1).date+"T00:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
+  chart.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}<polygon points="${area}" fill="rgba(101,199,247,.10)"/><polyline points="${points}" fill="none" stroke="#65c7f7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}<text x="${L}" y="${H-10}" fill="#91a0b2" font-size="11">${firstLabel}</text><text x="${W-R}" y="${H-10}" text-anchor="end" fill="#91a0b2" font-size="11">${lastLabel}</text></svg>`;
 }
 
 
 function metaForName(name){return metaLookup().get(normName(name))||{}}
 
-// v11.2: robust delegated click handling for dynamically rendered asset rows.
-// data-asset stores an encoded name, avoiding quote/HTML issues in inline handlers.
 document.addEventListener("click",function(ev){
+  const actionTarget=ev.target.closest("[data-action]");
+  if(actionTarget){
+    const action=actionTarget.dataset.action;
+    const encoded=actionTarget.dataset.value||"";
+    try{
+      const value=decodeURIComponent(encoded);
+      if(action==="open-asset-data")openAssetInData(value);
+      if(action==="open-broker-data")openBrokerData(value);
+    }catch(err){
+      console.error("Portfolio navigation failed",err);
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+    return;
+  }
   const target=ev.target.closest("[data-asset]");
   if(!target)return;
   const encoded=target.getAttribute("data-asset");
@@ -1271,8 +1337,9 @@ function openAssetDetail(name){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function positionDividendGrowthCell(p){
-  const direct=parseMaybePct(p.expected_dividend_growth,false),fallback=parseMaybePct(p.expected_growth,false),value=direct??fallback;
-  return `${growthCell(value)}<div class="tiny">${direct!==null?"Sheet":"Fallback"}</div>`;
+  const useDirect=hasDirectDividendGrowth(),value=effectiveDividendGrowth(p,useDirect);
+  const source=value===null?"N/A":useDirect?"Sheet":"Fallback";
+  return `${growthCell(value)}<div class="tiny">${source}</div>`;
 }
 function renderAssetDetail(name){
   const agg=aggregate().find(a=>normName(a.name)===normName(name));
@@ -1299,31 +1366,180 @@ function renderAssetDetail(name){
       <div class="card"><h2>Dividend Forecast</h2><div class="split"><span class="label">Heute</span><strong>${euro(agg.div,2)}</strong></div><div class="split"><span class="label">in 1 Jahr</span><strong>${euro(one,2)}</strong></div><div class="split"><span class="label">in 5 Jahren</span><strong>${euro(five,2)}</strong></div><div class="sub">Verwendet dieselbe Dividend-Engine wie der Forecast-Tab inklusive Sparplan und Reinvestition.</div></div>
       <div class="card"><h2>Ausschüttungsmonate</h2>${months.length?`<div class="detail-months">${months.map(m=>`<span class="detail-month">${monthNames[Number(m)-1]||m}</span>`).join("")}</div>`:'<div class="empty-state">Keine Ausschüttungsmonate hinterlegt.</div>'}<div class="sub" style="margin-top:12px">Kalenderdaten kommen aus PortfolioMeta.</div></div>
     </div>
-    <div class="card detail-brokers"><div class="split"><h2>Depot-Aufschlüsselung</h2><button class="btn secondary small" onclick="openAssetInData(${JSON.stringify(agg.name)})">In Daten bearbeiten</button></div><div class="tablebox"><table><thead><tr><th>Depot</th><th>Quelle</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Yield</th><th>Fund. Growth</th><th>Div. Growth</th><th>Sparplan</th></tr></thead><tbody>${items.map(p=>`<tr><td>${esc(p.broker||"–")}</td><td><span class="pill">${p.source==="sheet"?"Sheet":"Manuell"}</span></td><td>${num(p.shares,4)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.value?(+p.annual_div||0)/(+p.value||1)*100:0)}</td><td>${growthCell(parseMaybePct(p.fundamental_growth,false))}</td><td>${positionDividendGrowthCell(p)}</td><td>${euro(p.monthly)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    <div class="card detail-brokers"><div class="split"><h2>Depot-Aufschlüsselung</h2><button class="btn secondary small" data-action="open-asset-data" data-value="${esc(encodeURIComponent(agg.name))}">In Daten bearbeiten</button></div><div class="tablebox"><table><thead><tr><th>Depot</th><th>Quelle</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Yield</th><th>Fund. Growth</th><th>Div. Growth</th><th>Sparplan</th></tr></thead><tbody>${items.map(p=>`<tr><td>${esc(p.broker||"–")}</td><td><span class="pill">${p.source==="sheet"?"Sheet":"Manuell"}</span></td><td>${num(p.shares,4)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.value?(+p.annual_div||0)/(+p.value||1)*100:0)}</td><td>${growthCell(parseMaybePct(p.fundamental_growth,false))}</td><td>${positionDividendGrowthCell(p)}</td><td>${euro(p.monthly)}</td></tr>`).join("")}</tbody></table></div></div>`;
 }
 function openAssetInData(name){switchView("data");const q=document.getElementById("search");if(q){q.value=name;renderData()}setTimeout(()=>q?.scrollIntoView({behavior:"smooth",block:"center"}),50)}
 
 function goalCurrentValue(g){const t=totals(),rt=propertyTotals();if(g.type==="net_worth")return t.financialValue+rt.equity;if(g.type==="annual_dividend")return t.div;if(g.type==="monthly_dividend")return t.div/12;return t.financialValue}
-function goalTypeLabel(type){return ({financial_assets:"Financial Assets",net_worth:"Net Worth",annual_dividend:"Dividende p.a.",monthly_dividend:"Dividende / Monat"})[type]||type}
+function goalTypeLabel(type){return ({financial_assets:"Financial Assets",net_worth:"Net Worth",annual_dividend:"Dividende p.a.",monthly_dividend:"Dividende / Monat"})[type]||"Ziel"}
 function goalIsDividend(g){return g.type==="annual_dividend"||g.type==="monthly_dividend"}
-function loanBalanceAfterMonths(p,months){let balance=Math.max(0,+p.remaining_debt||0),r=(+p.interest_rate||0)/100/12,payment=+p.monthly_payment||0;if(payment<=0)payment=balance*((+p.interest_rate||0)+(+p.initial_repayment||0))/100/12;for(let i=0;i<months&&balance>0;i++){const interest=balance*r;let principal=Math.max(0,payment-interest);if(principal>balance)principal=balance;balance-=principal}return balance}
+function loanBalanceAfterMonths(p,months){return projectLoanForMonths(p,months).balance}
 function propertyEquityAfterMonths(months){return properties.reduce((sum,p)=>{const val=(+p.current_value||0)*Math.pow(1+(+p.value_growth||0)/100,months/12),debt=loanBalanceAfterMonths(p,months);return sum+val-debt},0)}
-function projectFinancialAssets(months,annualReturn,monthlyContribution,realTerms=false,inflation=0){let v=totals().financialValue;let r=annualReturn/100;if(realTerms)r=(1+r)/(1+inflation/100)-1;const rm=Math.pow(1+r,1/12)-1;for(let i=0;i<months;i++)v=v*(1+rm)+monthlyContribution;return v}
+function projectFinancialAssets(months,annualReturn,monthlyContribution,realTerms=false,inflation=0){
+  let value=totals().financialValue;
+  let annualRate=Math.max(-99.9,finiteOr(annualReturn,0))/100;
+  if(realTerms){
+    const inflationRate=Math.max(-99.9,finiteOr(inflation,0))/100;
+    annualRate=(1+annualRate)/(1+inflationRate)-1;
+  }
+  const monthlyRate=Math.pow(1+annualRate,1/12)-1;
+  for(let month=0;month<months;month++)value=value*(1+monthlyRate)+monthlyContribution;
+  return value;
+}
 function findWealthGoalMonths(g,annualReturn){const target=+g.target||0,monthly=Math.max(0,+g.monthly_contribution||0),infl=+g.inflation||0,real=!!g.real_terms;for(let m=0;m<=600;m++){const fin=projectFinancialAssets(m,annualReturn,monthly,real,infl),v=g.type==="net_worth"?fin+propertyEquityAfterMonths(m):fin;if(v>=target)return m}return null}
-function projectDividendGoalMonths(g,growthAdj=0){const t=totals(),targetAnnual=g.type==="monthly_dividend"?(+g.target||0)*12:(+g.target||0),y=t.investedValue?t.div/t.investedValue:0,monthly=Math.max(0,+g.monthly_contribution||0),growth=Math.max(-.99,(+g.div_growth||t.expGrowth||0)+growthAdj)/100,gm=Math.pow(1+growth,1/12)-1;let annual=t.div;for(let m=0;m<=600;m++){if(annual>=targetAnnual)return m;annual*=1+gm;annual+=monthly*y;if(g.reinvest!==false)annual+=(annual/12)*y}return null}
+function projectDividendGoalMonths(g,growthAdj=0){
+  const t=totals();
+  const targetAnnual=g.type==="monthly_dividend"?(+g.target||0)*12:(+g.target||0);
+  const portfolioYield=t.investedValue?t.div/t.investedValue:0;
+  const monthlyContribution=Math.max(0,+g.monthly_contribution||0);
+  const baseGrowth=finiteOr(g.div_growth,finiteOr(t.expGrowth,0));
+  const annualGrowth=Math.max(-99,baseGrowth+growthAdj)/100;
+  const monthlyGrowth=Math.pow(1+annualGrowth,1/12)-1;
+  let annualDividend=t.div;
+  for(let month=0;month<=600;month++){
+    if(annualDividend>=targetAnnual)return month;
+    annualDividend*=1+monthlyGrowth;
+    annualDividend+=monthlyContribution*portfolioYield;
+    if(g.reinvest!==false)annualDividend+=(annualDividend/12)*portfolioYield;
+  }
+  return null;
+}
 function etaFromMonths(months){if(months===null)return "> 50 Jahre";if(months===0)return "erreicht";const d=new Date();d.setMonth(d.getMonth()+months);return d.toLocaleDateString("de-DE",{month:"short",year:"numeric"})}
-function renderGoals(){const list=document.getElementById("goalsList");if(!list)return;if(!goals.length){list.innerHTML='<div class="empty-state">Noch keine Ziele angelegt. Über „+ Ziel hinzufügen“ kannst du z. B. 500k Financial Assets, 1 Mio. Net Worth oder 10k Dividende p.a. definieren.</div>';return}list.innerHTML=goals.map((g,i)=>{const cur=goalCurrentValue(g),target=+g.target||0,progress=target?Math.min(100,cur/target*100):0,isDiv=goalIsDividend(g);let low,base,high;if(isDiv){low=projectDividendGoalMonths(g,-2);base=projectDividendGoalMonths(g,0);high=projectDividendGoalMonths(g,2)}else{low=findWealthGoalMonths(g,+g.return_low||4);base=findWealthGoalMonths(g,+g.return_base||6);high=findWealthGoalMonths(g,+g.return_high||8)}const targetDate=g.target_date?new Date(g.target_date+"T00:00:00").toLocaleDateString("de-DE"):"kein fixes Datum";return `<div class="goal-card card"><div class="split"><div><div class="property-title">${esc(g.name||goalTypeLabel(g.type))}</div><div class="detail-meta"><span class="goaltype">${goalTypeLabel(g.type)}</span>${g.real_terms&&!isDiv?'<span class="goaltype">heutige Kaufkraft</span>':''}</div></div><div class="goal-actions"><button class="btn small secondary" onclick="editGoal(${i})">Edit</button><button class="btn small danger" onclick="deleteGoal(${i})">Delete</button></div></div><div class="progress"><span style="width:${progress}%"></span></div><div class="split"><strong>${euro(cur)} / ${euro(target)}</strong><strong>${pct(progress,1)}</strong></div><div class="goal-grid"><div class="mini"><div class="label">Fehlt noch</div><strong>${euro(Math.max(0,target-cur))}</strong></div><div class="mini"><div class="label">Konservativ</div><div class="goal-eta">${etaFromMonths(low)}</div></div><div class="mini"><div class="label">Basis</div><div class="goal-eta">${etaFromMonths(base)}</div></div><div class="mini"><div class="label">Optimistisch</div><div class="goal-eta">${etaFromMonths(high)}</div></div></div><div class="sub">Zieldatum: ${targetDate} · Einzahlung ${euro(g.monthly_contribution||0)}/Monat${isDiv?` · Div.-Growth ${pct(g.div_growth,1)} · Reinvest ${g.reinvest===false?"Nein":"Ja"}`:` · Rendite ${pct(g.return_low,1)} / ${pct(g.return_base,1)} / ${pct(g.return_high,1)}${g.real_terms?` · Inflation ${pct(g.inflation,1)}`:""}`}${g.note?` · ${esc(g.note)}`:""}</div></div>`}).join("")}
+function goalScenarioMonths(g,isDividend){
+  if(isDividend){
+    return {
+      low:projectDividendGoalMonths(g,-2),
+      base:projectDividendGoalMonths(g,0),
+      high:projectDividendGoalMonths(g,2)
+    };
+  }
+  return {
+    low:findWealthGoalMonths(g,finiteOr(g.return_low,4)),
+    base:findWealthGoalMonths(g,finiteOr(g.return_base,6)),
+    high:findWealthGoalMonths(g,finiteOr(g.return_high,8))
+  };
+}
+function renderGoalCard(g,index){
+  const current=goalCurrentValue(g),target=+g.target||0;
+  const progress=target?Math.min(100,current/target*100):0;
+  const isDividend=goalIsDividend(g),scenario=goalScenarioMonths(g,isDividend);
+  const targetDate=g.target_date?new Date(g.target_date+"T00:00:00").toLocaleDateString("de-DE"):"kein fixes Datum";
+  const assumptions=isDividend
+    ? ` · Div.-Growth ${pct(g.div_growth,1)} · Reinvest ${g.reinvest===false?"Nein":"Ja"}`
+    : ` · Rendite ${pct(g.return_low,1)} / ${pct(g.return_base,1)} / ${pct(g.return_high,1)}${g.real_terms?` · Inflation ${pct(g.inflation,1)}`:""}`;
+  return `<div class="goal-card card">
+    <div class="split">
+      <div><div class="property-title">${esc(g.name||goalTypeLabel(g.type))}</div><div class="detail-meta"><span class="goaltype">${esc(goalTypeLabel(g.type))}</span>${g.real_terms&&!isDividend?'<span class="goaltype">heutige Kaufkraft</span>':''}</div></div>
+      <div class="goal-actions"><button class="btn small secondary" onclick="editGoal(${index})">Edit</button><button class="btn small danger" onclick="deleteGoal(${index})">Delete</button></div>
+    </div>
+    <div class="progress"><span style="width:${progress}%"></span></div>
+    <div class="split"><strong>${euro(current)} / ${euro(target)}</strong><strong>${pct(progress,1)}</strong></div>
+    <div class="goal-grid">
+      <div class="mini"><div class="label">Fehlt noch</div><strong>${euro(Math.max(0,target-current))}</strong></div>
+      <div class="mini"><div class="label">Konservativ</div><div class="goal-eta">${etaFromMonths(scenario.low)}</div></div>
+      <div class="mini"><div class="label">Basis</div><div class="goal-eta">${etaFromMonths(scenario.base)}</div></div>
+      <div class="mini"><div class="label">Optimistisch</div><div class="goal-eta">${etaFromMonths(scenario.high)}</div></div>
+    </div>
+    <div class="sub">Zieldatum: ${targetDate} · Einzahlung ${euro(g.monthly_contribution||0)}/Monat${assumptions}${g.note?` · ${esc(g.note)}`:""}</div>
+  </div>`;
+}
+function renderGoals(){
+  const list=document.getElementById("goalsList");
+  if(!list)return;
+  if(!goals.length){
+    list.innerHTML='<div class="empty-state">Noch keine Ziele angelegt. Über „+ Ziel hinzufügen“ kannst du z. B. 500k Financial Assets, 1 Mio. Net Worth oder 10k Dividende p.a. definieren.</div>';
+    return;
+  }
+  list.innerHTML=goals.map(renderGoalCard).join("");
+}
 function toggleGoalFields(){const div=["annual_dividend","monthly_dividend"].includes(document.getElementById("gType")?.value);document.querySelectorAll(".wealth-only").forEach(x=>x.style.display=div?"none":"block");document.querySelectorAll(".dividend-only").forEach(x=>x.style.display=div?"block":"none")}
 function clearGoalForm(){goalEditIndex=null;document.getElementById("goalEditorCard").style.display="none";document.getElementById("goalEditorTitle").textContent="Ziel hinzufügen"}
-function newGoal(){goalEditIndex=null;const t=totals();document.getElementById("goalEditorCard").style.display="block";document.getElementById("goalEditorTitle").textContent="Ziel hinzufügen";document.getElementById("gName").value="";document.getElementById("gType").value="financial_assets";document.getElementById("gTarget").value=500000;document.getElementById("gDate").value="";document.getElementById("gMonthly").value=Math.round(t.monthly||0);document.getElementById("gReturnLow").value=4;document.getElementById("gReturnBase").value=6;document.getElementById("gReturnHigh").value=8;document.getElementById("gInflation").value=2;document.getElementById("gDivGrowth").value=(t.expGrowth||5).toFixed(1);document.getElementById("gReinvest").value="1";document.getElementById("gRealTerms").checked=false;document.getElementById("gNote").value="";toggleGoalFields();setTimeout(()=>document.getElementById("goalEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"}),40)}
+function newGoal(){
+  goalEditIndex=null;
+  const t=totals();
+  document.getElementById("goalEditorCard").style.display="block";
+  document.getElementById("goalEditorTitle").textContent="Ziel hinzufügen";
+  document.getElementById("gName").value="";
+  document.getElementById("gType").value="financial_assets";
+  document.getElementById("gTarget").value=500000;
+  document.getElementById("gDate").value="";
+  document.getElementById("gMonthly").value=Math.round(t.monthly||0);
+  document.getElementById("gReturnLow").value=4;
+  document.getElementById("gReturnBase").value=6;
+  document.getElementById("gReturnHigh").value=8;
+  document.getElementById("gInflation").value=2;
+  document.getElementById("gDivGrowth").value=finiteOr(t.expGrowth,5).toFixed(1);
+  document.getElementById("gReinvest").value="1";
+  document.getElementById("gRealTerms").checked=false;
+  document.getElementById("gNote").value="";
+  toggleGoalFields();
+  setTimeout(()=>document.getElementById("goalEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+}
 function goalFromForm(){return {name:document.getElementById("gName").value.trim()||goalTypeLabel(document.getElementById("gType").value),type:document.getElementById("gType").value,target:+document.getElementById("gTarget").value||0,target_date:document.getElementById("gDate").value||"",monthly_contribution:+document.getElementById("gMonthly").value||0,return_low:+document.getElementById("gReturnLow").value||0,return_base:+document.getElementById("gReturnBase").value||0,return_high:+document.getElementById("gReturnHigh").value||0,inflation:+document.getElementById("gInflation").value||0,real_terms:document.getElementById("gRealTerms").checked,div_growth:+document.getElementById("gDivGrowth").value||0,reinvest:document.getElementById("gReinvest").value==="1",note:document.getElementById("gNote").value.trim()}}
 function saveGoal(){const g=goalFromForm();if(g.target<=0){alert("Bitte einen Zielwert größer 0 eingeben.");return}if(goalEditIndex===null)goals.push(g);else goals[goalEditIndex]=g;persist();clearGoalForm();renderGoals()}
-function editGoal(i){goalEditIndex=i;const g=goals[i];document.getElementById("goalEditorCard").style.display="block";document.getElementById("goalEditorTitle").textContent="Ziel bearbeiten";document.getElementById("gName").value=g.name||"";document.getElementById("gType").value=g.type||"financial_assets";document.getElementById("gTarget").value=g.target||0;document.getElementById("gDate").value=g.target_date||"";document.getElementById("gMonthly").value=g.monthly_contribution||0;document.getElementById("gReturnLow").value=g.return_low??4;document.getElementById("gReturnBase").value=g.return_base??6;document.getElementById("gReturnHigh").value=g.return_high??8;document.getElementById("gInflation").value=g.inflation??2;document.getElementById("gRealTerms").checked=!!g.real_terms;document.getElementById("gDivGrowth").value=g.div_growth??totals().expGrowth;document.getElementById("gReinvest").value=g.reinvest===false?"0":"1";document.getElementById("gNote").value=g.note||"";toggleGoalFields();setTimeout(()=>document.getElementById("goalEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"}),40)}
+function editGoal(i){
+  goalEditIndex=i;
+  const g=goals[i];
+  document.getElementById("goalEditorCard").style.display="block";
+  document.getElementById("goalEditorTitle").textContent="Ziel bearbeiten";
+  document.getElementById("gName").value=g.name||"";
+  document.getElementById("gType").value=g.type||"financial_assets";
+  document.getElementById("gTarget").value=g.target||0;
+  document.getElementById("gDate").value=g.target_date||"";
+  document.getElementById("gMonthly").value=g.monthly_contribution||0;
+  document.getElementById("gReturnLow").value=g.return_low??4;
+  document.getElementById("gReturnBase").value=g.return_base??6;
+  document.getElementById("gReturnHigh").value=g.return_high??8;
+  document.getElementById("gInflation").value=g.inflation??2;
+  document.getElementById("gRealTerms").checked=!!g.real_terms;
+  document.getElementById("gDivGrowth").value=g.div_growth??finiteOr(totals().expGrowth,5);
+  document.getElementById("gReinvest").value=g.reinvest===false?"0":"1";
+  document.getElementById("gNote").value=g.note||"";
+  toggleGoalFields();
+  setTimeout(()=>document.getElementById("goalEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+}
 function deleteGoal(i){if(!confirm(`Ziel „${goals[i]?.name||""}“ löschen?`))return;goals.splice(i,1);persist();renderGoals()}
 
-function allocationBucketData(dim){let entries=[],total=0;if(dim==="position"){entries=aggregate().filter(x=>x.value>0).map(x=>[x.name,x.value]);total=totals().investedValue}else if(dim==="broker"){entries=brokerTotals().filter(x=>x[1]>0);total=totals().financialValue}else{const field=dim;entries=analysisBucket(field);total=analysisRows().reduce((a,x)=>a+x.value,0)}return {entries,total}}
+function allocationBucketData(dimension){
+  if(dimension==="position")return {entries:aggregate().filter(row=>row.value>0).map(row=>[row.name,row.value]),total:totals().investedValue};
+  if(dimension==="broker")return {entries:brokerTotals().filter(row=>row[1]>0),total:totals().financialValue};
+  const rows=analysisRows();
+  return {entries:analysisBucket(rows,dimension),total:rows.reduce((sum,row)=>sum+row.value,0)};
+}
 function allocTargetMap(){if(!allocationTargets[allocationDimension])allocationTargets[allocationDimension]={};return allocationTargets[allocationDimension]}
-function renderAllocation(){const body=document.getElementById("allocationBody");if(!body)return;const data=allocationBucketData(allocationDimension),targetMap=allocTargetMap(),allNames=[...new Set([...data.entries.map(x=>x[0]),...Object.keys(targetMap)])],vals=new Map(data.entries),investment=Math.max(0,+document.getElementById("allocInvestment")?.value||0),sumTarget=allNames.reduce((a,n)=>a+(+targetMap[n]||0),0),afterTotal=data.total+investment,gaps=allNames.map(n=>{const cur=vals.get(n)||0,t=+targetMap[n]||0,desired=afterTotal*t/100;return [n,Math.max(0,desired-cur)]}),sumGap=gaps.reduce((a,x)=>a+x[1],0),suggest=new Map(gaps.map(([n,g])=>[n,sumGap>0?investment*g/sumGap:0]));document.getElementById("allocTargetSum").textContent=pct(sumTarget,1);const hint=document.getElementById("allocHint");if(hint){hint.textContent=Math.abs(sumTarget-100)<.05?"Zielsumme passt: 100 %. Vorschlag verteilt nur auf Untergewichte.":`Zielsumme ist ${pct(sumTarget,1)} – für vollständiges Rebalancing bitte auf 100 % bringen.`;hint.className="sub "+(Math.abs(sumTarget-100)<.05?"good":"warn")};body.innerHTML=allNames.sort((a,b)=>(vals.get(b)||0)-(vals.get(a)||0)).map(n=>{const cur=vals.get(n)||0,curPct=data.total?cur/data.total*100:0,target=+targetMap[n]||0,diff=target-curPct,add=suggest.get(n)||0,afterPct=afterTotal?(cur+add)/afterTotal*100:0,cls=diff>0.05?"alloc-positive":diff<-.05?"alloc-negative":"alloc-neutral";return `<tr><td><b>${esc(n)}</b></td><td>${euro(cur)}</td><td>${pct(curPct,1)}</td><td><input class="allocation-target" type="number" min="0" max="100" step=".1" value="${Number((target||0).toFixed(1))}" data-name="${esc(n)}"></td><td class="${cls}">${diff>=0?"+":""}${pct(diff,1)}</td><td>${add>0?`<b class="good">${euro(add)}</b>`:euro(0)}</td><td>${pct(afterPct,1)}</td></tr>`}).join("");body.querySelectorAll(".allocation-target").forEach(inp=>inp.addEventListener("change",()=>{targetMap[inp.dataset.name]=Math.max(0,Math.min(100,+inp.value||0));persist();renderAllocation()}))}
+function renderAllocation(){
+  const body=document.getElementById("allocationBody");
+  if(!body)return;
+
+  const data=allocationBucketData(allocationDimension),targetMap=allocTargetMap();
+  const names=[...new Set([...data.entries.map(row=>row[0]),...Object.keys(targetMap)])];
+  const values=new Map(data.entries),investment=Math.max(0,+document.getElementById("allocInvestment")?.value||0);
+  const targetSum=names.reduce((sum,name)=>sum+(+targetMap[name]||0),0),afterTotal=data.total+investment;
+  const gaps=names.map(name=>{
+    const current=values.get(name)||0,target=+targetMap[name]||0;
+    return [name,Math.max(0,afterTotal*target/100-current)];
+  });
+  const gapTotal=gaps.reduce((sum,row)=>sum+row[1],0);
+  const suggestions=new Map(gaps.map(([name,gap])=>[name,gapTotal>0?investment*gap/gapTotal:0]));
+
+  document.getElementById("allocTargetSum").textContent=pct(targetSum,1);
+  const hint=document.getElementById("allocHint"),targetIsComplete=Math.abs(targetSum-100)<.05;
+  if(hint){
+    hint.textContent=targetIsComplete?"Zielsumme passt: 100 %. Vorschlag verteilt nur auf Untergewichte.":`Zielsumme ist ${pct(targetSum,1)} – für vollständiges Rebalancing bitte auf 100 % bringen.`;
+    hint.className="sub "+(targetIsComplete?"good":"warn");
+  }
+
+  body.innerHTML=names.sort((a,b)=>(values.get(b)||0)-(values.get(a)||0)).map(name=>{
+    const current=values.get(name)||0,currentPercent=data.total?current/data.total*100:0,target=+targetMap[name]||0;
+    const difference=target-currentPercent,addition=suggestions.get(name)||0,afterPercent=afterTotal?(current+addition)/afterTotal*100:0;
+    const differenceClass=difference>.05?"alloc-positive":difference<-.05?"alloc-negative":"alloc-neutral";
+    return `<tr><td><b>${esc(name)}</b></td><td>${euro(current)}</td><td>${pct(currentPercent,1)}</td><td><input class="allocation-target" type="number" min="0" max="100" step=".1" value="${Number(target.toFixed(1))}" data-name="${esc(name)}"></td><td class="${differenceClass}">${difference>=0?"+":""}${pct(difference,1)}</td><td>${addition>0?`<b class="good">${euro(addition)}</b>`:euro(0)}</td><td>${pct(afterPercent,1)}</td></tr>`;
+  }).join("");
+  body.querySelectorAll(".allocation-target").forEach(input=>input.addEventListener("change",()=>{
+    targetMap[input.dataset.name]=Math.max(0,Math.min(100,+input.value||0));
+    persist();renderAllocation();
+  }));
+}
 function setCurrentAllocationAsTarget(){const data=allocationBucketData(allocationDimension),m={};for(const [n,v] of data.entries)m[n]=data.total?v/data.total*100:0;allocationTargets[allocationDimension]=m;persist();renderAllocation()}
 function clearAllocationTargets(){if(!confirm("Zielallokation für diese Ebene löschen?"))return;allocationTargets[allocationDimension]={};persist();renderAllocation()}
 
@@ -1379,7 +1595,7 @@ function render(){
   document.getElementById("mGrowthStatus").textContent=`Fund. ${pctMaybe(t.fundamentalCoverage,0)} · Div. ${pctMaybe(t.dividendGrowthCoverage,0)}`;
 
   let bars="";const brokers=brokerTotals(),max=brokers[0]?.[1]||1;
-  for(const [b,v] of brokers)bars+=`<div class="rowbar clickable" onclick="openBrokerData(${JSON.stringify(b)})" title="${esc(b)} bearbeiten"><div>${esc(b)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${euro(v)}</div></div>`;
+  for(const [b,v] of brokers)bars+=`<div class="rowbar clickable" data-action="open-broker-data" data-value="${esc(encodeURIComponent(b))}" title="${esc(b)} bearbeiten"><div>${esc(b)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${euro(v)}</div></div>`;
   document.getElementById("brokerBars").innerHTML=bars;
 
   document.getElementById("portfolioBody").innerHTML=agg.map(a=>`<tr class="asset-row" data-asset="${encodeURIComponent(a.name)}" title="${esc(a.name)} Details öffnen"><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${num(a.shares)}</td><td>${euro(a.value)}</td><td>${euro(a.div,2)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td><td>${pct(t.value?a.value/t.value*100:0,1)}</td></tr>`).join("");
@@ -1419,7 +1635,7 @@ function renderRealEstate(){
   document.getElementById("reCashflow").textContent=euro(rt.cash);
 
   document.getElementById("propertyCards").innerHTML=properties.map((p,i)=>{
-    const pr=loanProjection(p), targetValue=propertyValueAtTarget(p), cf=propertyCashflow(p), targetEquity=targetValue-pr.balance;
+    const pr=loanProjection(p),targetValue=propertyValueAtTarget(p),cf=propertyCashflow(p,pr),targetEquity=targetValue-pr.balance;
     return `<div class="card property-card">
       <div class="property-head"><div><div class="property-title">${esc(p.name)}</div><div class="property-location">${esc(p.location||"")}</div></div>
       <div><button class="btn small secondary" onclick="editProperty(${i})">Edit</button> <button class="btn small danger" onclick="deleteProperty(${i})">Delete</button></div></div>
@@ -1548,7 +1764,7 @@ function applyPrivateDefaults(defaults){
 function oldSheetBuckets(){
   const m=new Map();
   for(const p of positions.filter(x=>x.source==="sheet")){
-    const k=`${String(p.broker||"").toLowerCase()}||${String(p.name||"").toLowerCase()}`;
+    const k=growthKey(p);
     if(!m.has(k))m.set(k,[]);
     m.get(k).push(p);
   }
@@ -1557,7 +1773,7 @@ function oldSheetBuckets(){
 function applyLocalFallback(incoming){
   const buckets=oldSheetBuckets();
   return incoming.map(p=>{
-    const k=`${String(p.broker||"").toLowerCase()}||${String(p.name||"").toLowerCase()}`;
+    const k=growthKey(p);
     const bucket=buckets.get(k)||[];
     const old=bucket.length?bucket.shift():null;
     if(!p.stale || !old) return p;
@@ -1610,12 +1826,13 @@ function renderHealth(payload=loadHealth()){
 
   const sheetErrors=Array.isArray(payload.health?.errors)?payload.health.errors:[];
   const posWarnings=Array.isArray(payload.warnings)?payload.warnings:[];
-  const total=sheetErrors.length+posWarnings.length;
+  const sheetErrorCount=Math.max(sheetErrors.length,Math.max(0,Math.trunc(finiteOr(payload.health?.error_count,0))));
+  const total=sheetErrorCount+posWarnings.length;
 
   countEl.textContent=total===0?"0 Fehler":`${total} Hinweise`;
   summary.textContent=total===0
     ?"Alle geprüften Tabs sind aktuell fehlerfrei."
-    :`${sheetErrors.length} aktive Sheet-Fehler / Referenzprobleme und ${posWarnings.length} Sync-Fallbacks erkannt.`;
+    :`${sheetErrorCount} aktive Sheet-Fehler / Referenzprobleme und ${posWarnings.length} Sync-Fallbacks erkannt.`;
 
   const items=[];
   for(const e of sheetErrors.slice(0,15)){
@@ -1693,26 +1910,78 @@ document.getElementById("search").addEventListener("input",renderData);
 document.getElementById("rSaveBtn").addEventListener("click",()=>{const p=getPropertyForm();if(reEditIndex===null)properties.push(p);else properties[reEditIndex]=p;persist();clearPropertyForm();render()});
 document.getElementById("rCancelBtn").addEventListener("click",clearPropertyForm);
 
+function createBackup(){
+  return {
+    schemaVersion:14,
+    appVersion:"14.0",
+    exportedAt:new Date().toISOString(),
+    positions,
+    properties,
+    cashTotal:getCashTotal(),
+    growthOverrides,
+    goals,
+    allocationTargets,
+    portfolioGrowthKpis,
+    portfolioMeta,
+    portfolioHistory,
+    health:loadHealth(),
+    lastSync:localStorage.getItem("portfolio_os_v4_last_sync")||null
+  };
+}
+function restoreBackup(backup){
+  if(Array.isArray(backup)){
+    positions=normalizePositions(backup);
+    return;
+  }
+  if(!backup||typeof backup!=="object")throw new Error("Das Backup hat kein gültiges Objektformat.");
+
+  if(Array.isArray(backup.positions))positions=normalizePositions(backup.positions);
+  if(Array.isArray(backup.properties))properties=backup.properties.filter(item=>item&&typeof item==="object");
+  if(Array.isArray(backup.goals))goals=backup.goals.filter(item=>item&&typeof item==="object");
+  if(backup.allocationTargets&&typeof backup.allocationTargets==="object"&&!Array.isArray(backup.allocationTargets))allocationTargets=backup.allocationTargets;
+  if(backup.growthOverrides&&typeof backup.growthOverrides==="object"&&!Array.isArray(backup.growthOverrides))growthOverrides=backup.growthOverrides;
+
+  if(Object.prototype.hasOwnProperty.call(backup,"cashTotal")){
+    localStorage.setItem(CASH_TOTAL_KEY,String(Math.max(0,finiteOr(backup.cashTotal,0))));
+  }
+  if(Array.isArray(backup.portfolioMeta)){
+    portfolioMeta=backup.portfolioMeta;
+    localStorage.setItem(META_KEY,JSON.stringify(portfolioMeta));
+  }
+  if(Array.isArray(backup.portfolioHistory)){
+    portfolioHistory=backup.portfolioHistory;
+    localStorage.setItem(HISTORY_KEY,JSON.stringify(portfolioHistory));
+  }
+  if(Object.prototype.hasOwnProperty.call(backup,"portfolioGrowthKpis")){
+    portfolioGrowthKpis=normalizeGrowthKpis(backup.portfolioGrowthKpis)||null;
+    if(portfolioGrowthKpis)localStorage.setItem(GROWTH_KPI_KEY,JSON.stringify(portfolioGrowthKpis));
+    else localStorage.removeItem(GROWTH_KPI_KEY);
+  }
+  if(Object.prototype.hasOwnProperty.call(backup,"health")){
+    if(backup.health&&typeof backup.health==="object")localStorage.setItem(HEALTH_KEY,JSON.stringify(backup.health));
+    else localStorage.removeItem(HEALTH_KEY);
+  }
+  if(Object.prototype.hasOwnProperty.call(backup,"lastSync")){
+    if(typeof backup.lastSync==="string"&&backup.lastSync)localStorage.setItem("portfolio_os_v4_last_sync",backup.lastSync);
+    else localStorage.removeItem("portfolio_os_v4_last_sync");
+  }
+}
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({exported_at:new Date().toISOString(),positions,properties,goals,allocationTargets,portfolioGrowthKpis},null,2)],{type:"application/json"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="portfolio-os-v11-backup.json";a.click();URL.revokeObjectURL(a.href);
+  const blob=new Blob([JSON.stringify(createBackup(),null,2)],{type:"application/json"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download="portfolio-os-v14-backup.json";
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(link.href),0);
 });
 document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
 document.getElementById("importFile").addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
-    const x=JSON.parse(await f.text());
-    if(Array.isArray(x)){positions=normalizePositions(x)}
-    else{
-      if(Array.isArray(x.positions))positions=normalizePositions(x.positions);
-      if(Array.isArray(x.properties))properties=x.properties;
-      if(Array.isArray(x.goals))goals=x.goals;
-      if(x.allocationTargets && typeof x.allocationTargets==="object")allocationTargets=x.allocationTargets;
-      portfolioGrowthKpis=normalizeGrowthKpis(x.portfolioGrowthKpis)||null;
-      if(portfolioGrowthKpis)localStorage.setItem(GROWTH_KPI_KEY,JSON.stringify(portfolioGrowthKpis));else localStorage.removeItem(GROWTH_KPI_KEY);
-    }
-    persist();render();alert("Import erfolgreich.");
-  }catch(_){alert("Die JSON-Datei konnte nicht gelesen werden.");}
+    if(f.size>10*1024*1024)throw new Error("Die Datei ist größer als 10 MB.");
+    restoreBackup(JSON.parse(await f.text()));
+    persist();loadCashEditor();render();renderHealth();alert("Import erfolgreich.");
+  }catch(error){alert("Import fehlgeschlagen: "+String(error.message||"Die JSON-Datei konnte nicht gelesen werden."));}
   e.target.value="";
 });
 
@@ -1796,12 +2065,13 @@ async function syncFromSheet(isAuto=false){
       return true;
     });
     positions=[...incoming,...manual];
-    saveHealth(data.health||{error_count:0,errors:[]},data.warnings||[]);
-    persist();render();renderHealth();
-
-    const stamp=new Date(data.synced_at||Date.now()).toLocaleString("de-DE");
+    const syncDate=new Date(data.synced_at||Date.now());
+    const stamp=(Number.isNaN(syncDate.getTime())?new Date():syncDate).toLocaleString("de-DE");
     localStorage.setItem("portfolio_os_v4_last_sync",stamp);
-    const warningCount=(data.health?.error_count||0)+(Array.isArray(data.warnings)?data.warnings.length:0);
+    saveHealth(data.health||{error_count:0,errors:[]},data.warnings||[]);
+    persist();render();
+
+    const warningCount=Math.max(0,Math.trunc(finiteOr(data.health?.error_count,0)))+(Array.isArray(data.warnings)?data.warnings.length:0);
     setSyncStatus(`Letzter Sync: ${stamp} · ${incoming.length} Sheet-Positionen${warningCount?` · ⚠ ${warningCount} Hinweise`:""}`,"good");
   }catch(err){
     setSyncStatus("Sync fehlgeschlagen: "+String(err.message||err),"bad");
