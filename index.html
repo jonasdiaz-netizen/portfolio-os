@@ -930,6 +930,11 @@ function pct(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{minimumFract
 function num(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{maximumFractionDigits:dec})}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function pctMaybe(x,dec=1){return x===null||x===undefined||!Number.isFinite(Number(x))?"–":pct(x,dec)}
+function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value}
+function setHtml(id,value){const el=document.getElementById(id);if(el)el.innerHTML=value}
+function setDisplay(id,visible){const el=document.getElementById(id);if(el)el.style.display=visible?"block":"none"}
+function naBadge(){return '<span class="data-badge">N/A</span>'}
+function growthMetricCell(value){return value?esc(value):naBadge()}
 function finiteOr(value,fallback=0){
   if(value===null||value===undefined||value==="")return fallback;
   const number=Number(value);
@@ -1090,7 +1095,7 @@ function growthPositionRows(){
   return {ranked,unrated};
 }
 
-function growthCell(value){return value===null||value===undefined||!Number.isFinite(Number(value))?'<span class="data-badge">N/A</span>':pct(value,1)}
+function growthCell(value){return value===null||value===undefined||!Number.isFinite(Number(value))?naBadge():pct(value,1)}
 function contributionCell(value){
   if(value===null||value===undefined||!Number.isFinite(Number(value)))return '<span class="data-badge">N/A</span>';
   const n=Number(value),cls=n>0?"good":n<0?"bad":"";
@@ -1121,31 +1126,39 @@ function dividendGrowthRows(){
   }).sort((a,b)=>(b.contribution??-Infinity)-(a.contribution??-Infinity)||b.dividend-a.dividend);
 }
 function growthSourceBadge(source){
-  if(!source||source==="N/A")return '<span class="data-badge">N/A</span>';
+  if(!source||source==="N/A")return naBadge();
   const isFallback=String(source).includes("Fallback"),cls=isFallback?"source-badge-fallback":"source-badge-sheet";
   return `<span class="data-badge ${cls}">${esc(source||"–")}</span>`;
+}
+function growthRankingRow(row,index){
+  return `<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><div class="growth-position"><span class="growth-rank">${index+1}</span><b>${esc(row.name)}</b></div></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${growthMetricCell(row.growthMetric)}</td><td>${growthCell(row.fundamentalGrowth)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td></tr>`;
+}
+function growthUnratedRow(row){
+  return `<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><b>${esc(row.name)}</b></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${growthMetricCell(row.growthMetric)}</td><td>${growthCell(row.dividendGrowth)}</td></tr>`;
+}
+function renderGrowthKpis(data,t,highest,contributor){
+  setText("gFundamental",pctMaybe(t.fundamentalGrowth,1));
+  setText("gCoverage",pctMaybe(t.fundamentalCoverage,1));
+  setText("gCoverageSub",`${data.ranked.length} von ${data.ranked.length+data.unrated.length} Positionen mit Growth-Annahme`);
+  setText("gHighestGrowth",highest?pct(highest.fundamentalGrowth,1):"–");
+  setText("gHighestGrowthSub",highest?`${highest.name}${highest.growthMetric?` · ${highest.growthMetric}`:""}`:"Keine Growth-Annahme verfügbar");
+  setText("gLargestContributor",contributor?contributor.name:"–");
+  setText("gLargestContributorSub",contributor?`${contributor.contribution>=0?"+":""}${num(contributor.contribution,2)} Prozentpunkte · ${pct(contributor.weight,1)} Portfoliogewicht`:"Keine Growth-Annahme verfügbar");
 }
 function renderGrowth(){
   const data=growthPositionRows(),t=totals(),highest=data.ranked[0]||null;
   const contributor=data.ranked.slice().sort((a,b)=>(b.contribution??-Infinity)-(a.contribution??-Infinity))[0]||null;
-  document.getElementById("gFundamental").textContent=pctMaybe(t.fundamentalGrowth,1);
-  document.getElementById("gCoverage").textContent=pctMaybe(t.fundamentalCoverage,1);
-  document.getElementById("gCoverageSub").textContent=`${data.ranked.length} von ${data.ranked.length+data.unrated.length} Positionen mit Growth-Annahme`;
-  document.getElementById("gHighestGrowth").textContent=highest?pct(highest.fundamentalGrowth,1):"–";
-  document.getElementById("gHighestGrowthSub").textContent=highest?`${highest.name}${highest.growthMetric?` · ${highest.growthMetric}`:""}`:"Keine Growth-Annahme verfügbar";
-  document.getElementById("gLargestContributor").textContent=contributor?contributor.name:"–";
-  document.getElementById("gLargestContributorSub").textContent=contributor?`${contributor.contribution>=0?"+":""}${num(contributor.contribution,2)} Prozentpunkte · ${pct(contributor.weight,1)} Portfoliogewicht`:"Keine Growth-Annahme verfügbar";
+  renderGrowthKpis(data,t,highest,contributor);
   const contributors=data.ranked.slice().sort((a,b)=>(b.contribution??-Infinity)-(a.contribution??-Infinity)).map(row=>({...row,rateLabel:`${pct(row.fundamentalGrowth,1)} Growth · ${pct(row.weight,1)} Gewicht`}));
   const coveredContribution=contributors.reduce((sum,row)=>sum+(Number(row.contribution)||0),0);
-  document.getElementById("growthContributionCount").textContent=`${contributors.length} Treiber`;
-  document.getElementById("growthContributionSummary").textContent=contributors.length?`Abgedeckter Beitrag zum Gesamtportfolio: ${coveredContribution>=0?"+":""}${num(coveredContribution,2)} Prozentpunkte. Der KPI oben wird innerhalb der Coverage normiert.`:"Fundamental Growth × Portfoliogewicht. N/A-Positionen bleiben außerhalb der Growth-Annahme.";
+  setText("growthContributionCount",`${contributors.length} Treiber`);
+  setText("growthContributionSummary",contributors.length?`Abgedeckter Beitrag zum Gesamtportfolio: ${coveredContribution>=0?"+":""}${num(coveredContribution,2)} Prozentpunkte. Der KPI oben wird innerhalb der Coverage normiert.`:"Fundamental Growth × Portfoliogewicht. N/A-Positionen bleiben außerhalb der Growth-Annahme.");
   renderContributionBars("growthContributionBars",contributors);
-  document.getElementById("growthCount").textContent=`${data.ranked.length} Position${data.ranked.length===1?"":"en"}`;
-  document.getElementById("growthBody").innerHTML=data.ranked.map((row,index)=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><div class="growth-position"><span class="growth-rank">${index+1}</span><b>${esc(row.name)}</b></div></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${row.growthMetric?esc(row.growthMetric):'<span class="data-badge">N/A</span>'}</td><td>${growthCell(row.fundamentalGrowth)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td></tr>`).join("")||'<tr><td colspan="7" class="empty-state">Noch keine Fundamental-Growth-Daten synchronisiert.</td></tr>';
-  const naCard=document.getElementById("growthNaCard");
-  naCard.style.display=data.unrated.length?"block":"none";
-  document.getElementById("growthNaCount").textContent=`${data.unrated.length} Position${data.unrated.length===1?"":"en"}`;
-  document.getElementById("growthNaBody").innerHTML=data.unrated.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><td><b>${esc(row.name)}</b></td><td>${euro(row.value)}</td><td>${pct(row.weight,1)}</td><td>${row.growthMetric?esc(row.growthMetric):'<span class="data-badge">N/A</span>'}</td><td>${growthCell(row.dividendGrowth)}</td></tr>`).join("");
+  setText("growthCount",`${data.ranked.length} Position${data.ranked.length===1?"":"en"}`);
+  setHtml("growthBody",data.ranked.map(growthRankingRow).join("")||'<tr><td colspan="7" class="empty-state">Noch keine Fundamental-Growth-Daten synchronisiert.</td></tr>');
+  setDisplay("growthNaCard",data.unrated.length);
+  setText("growthNaCount",`${data.unrated.length} Position${data.unrated.length===1?"":"en"}`);
+  setHtml("growthNaBody",data.unrated.map(growthUnratedRow).join(""));
 }
 function renderDividends(){
   const t=totals(),rows=dividendGrowthRows(),drivers=rows.filter(row=>row.contribution!==null&&Number.isFinite(Number(row.contribution)));
@@ -1368,6 +1381,38 @@ function positionDividendGrowthCell(p){
   const source=value===null?"N/A":useDirect?"Sheet":"Fallback";
   return `${growthCell(value)}<div class="tiny">${source}</div>`;
 }
+function assetDetailHeroHtml(agg,t,items,meta){
+  return `
+    <div class="detail-hero">
+      <div class="card"><div class="label">Position</div><div class="detail-title">${esc(agg.name)}</div><div class="detail-meta"><span class="pill">${esc(meta.asset_class||"Nicht zugeordnet")}</span><span class="pill">${esc(meta.sector||"Nicht zugeordnet")}</span><span class="pill">${esc(meta.region||"Nicht zugeordnet")}</span></div><div class="sub" style="margin-top:12px">Gehalten bei ${esc(agg.brokers)} · ${items.length} Depotposition${items.length===1?"":"en"}</div></div>
+      <div class="card"><div class="label">Portfolio-Gewicht</div><div class="forecastline">${pct(t.investedValue?agg.value/t.investedValue*100:0,1)}</div><div class="sub">${euro(agg.value)} von ${euro(t.investedValue)} investiertem Vermögen</div></div>
+    </div>`;
+}
+function assetMetricCardsHtml(agg,t,valuePerShare,dividendRow){
+  return `
+    <div class="grid4" style="margin-top:12px">
+      <div class="card"><div class="label">Wert</div><div class="metric">${euro(agg.value)}</div><div class="sub">${num(agg.shares,4)} Stück · rechnerisch ${euro(valuePerShare,2)}/Stück</div></div>
+      <div class="card"><div class="label">Annual Dividend</div><div class="metric">${euro(agg.div,2)}</div><div class="sub">${pct(t.div?agg.div/t.div*100:0,1)} deiner Gesamtdividende</div></div>
+      <div class="card"><div class="label">Dividend Yield</div><div class="metric">${pct(agg.yield)}</div><div class="sub">Expected Dividend Growth ${growthCell(dividendRow?.dividendGrowth)}</div></div>
+      <div class="card"><div class="label">Monatlicher Sparplan</div><div class="metric">${euro(agg.monthly)}</div><div class="sub">über alle Depots aggregiert</div></div>
+    </div>`;
+}
+function assetGrowthProfileHtml(growthRow,dividendRow){
+  return `<div class="card"><h2>Growth Profile</h2><div class="split"><span class="label">Growth Metric</span><strong>${growthMetricCell(growthRow?.growthMetric)}</strong></div><div class="split"><span class="label">Fundamental Growth</span><strong>${growthCell(growthRow?.fundamentalGrowth)}</strong></div><div class="split"><span class="label">FCF/share Growth</span><strong>${growthCell(growthRow?.fcfGrowth)}</strong></div><div class="split"><span class="label">Dividend Growth</span><strong>${growthCell(dividendRow?.dividendGrowth)}</strong></div><div class="split"><span class="label">Portfolio-Beitrag</span><span>${contributionCell(growthRow?.contribution)}</span></div><div class="sub">Fundamental Growth und FCF/share werden wertgewichtet; Dividend Growth wird nach Jahresdividende gewichtet. ${dividendRow?growthSourceBadge(dividendRow.source):""}</div></div>`;
+}
+function assetDividendForecastHtml(agg,one,five){
+  return `<div class="card"><h2>Dividend Forecast</h2><div class="split"><span class="label">Heute</span><strong>${euro(agg.div,2)}</strong></div><div class="split"><span class="label">in 1 Jahr</span><strong>${euro(one,2)}</strong></div><div class="split"><span class="label">in 5 Jahren</span><strong>${euro(five,2)}</strong></div><div class="sub">Verwendet dieselbe Dividend-Engine wie der Forecast-Tab inklusive Sparplan und Reinvestition.</div></div>`;
+}
+function assetDividendMonthsHtml(months,monthNames){
+  const body=months.length?`<div class="detail-months">${months.map(m=>`<span class="detail-month">${monthNames[Number(m)-1]||m}</span>`).join("")}</div>`:'<div class="empty-state">Keine Ausschüttungsmonate hinterlegt.</div>';
+  return `<div class="card"><h2>Ausschüttungsmonate</h2>${body}<div class="sub" style="margin-top:12px">Kalenderdaten kommen aus PortfolioMeta.</div></div>`;
+}
+function assetBrokerRow(p){
+  return `<tr><td>${esc(p.broker||"–")}</td><td><span class="pill">${p.source==="sheet"?"Sheet":"Manuell"}</span></td><td>${num(p.shares,4)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.value?(+p.annual_div||0)/(+p.value||1)*100:0)}</td><td>${growthCell(parseMaybePct(p.fundamental_growth,false))}</td><td>${positionDividendGrowthCell(p)}</td><td>${euro(p.monthly)}</td></tr>`;
+}
+function assetBrokerTableHtml(agg,items){
+  return `<div class="card detail-brokers"><div class="split"><h2>Depot-Aufschlüsselung</h2><button class="btn secondary small" data-action="open-asset-data" data-value="${esc(encodeURIComponent(agg.name))}">In Daten bearbeiten</button></div><div class="tablebox"><table><thead><tr><th>Depot</th><th>Quelle</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Yield</th><th>Fund. Growth</th><th>Div. Growth</th><th>Sparplan</th></tr></thead><tbody>${items.map(assetBrokerRow).join("")}</tbody></table></div></div>`;
+}
 function renderAssetDetail(name){
   const agg=aggregate().find(a=>normName(a.name)===normName(name));
   const el=document.getElementById("assetDetailContent");if(!el)return;
@@ -1378,22 +1423,14 @@ function renderAssetDetail(name){
   const growthData=growthPositionRows(),growthRow=[...growthData.ranked,...growthData.unrated].find(row=>normName(row.name)===normName(name));
   const dividendRow=dividendGrowthRows().find(row=>normName(row.name)===normName(name));
   el.innerHTML=`
-    <div class="detail-hero">
-      <div class="card"><div class="label">Position</div><div class="detail-title">${esc(agg.name)}</div><div class="detail-meta"><span class="pill">${esc(meta.asset_class||"Nicht zugeordnet")}</span><span class="pill">${esc(meta.sector||"Nicht zugeordnet")}</span><span class="pill">${esc(meta.region||"Nicht zugeordnet")}</span></div><div class="sub" style="margin-top:12px">Gehalten bei ${esc(agg.brokers)} · ${items.length} Depotposition${items.length===1?"":"en"}</div></div>
-      <div class="card"><div class="label">Portfolio-Gewicht</div><div class="forecastline">${pct(t.investedValue?agg.value/t.investedValue*100:0,1)}</div><div class="sub">${euro(agg.value)} von ${euro(t.investedValue)} investiertem Vermögen</div></div>
-    </div>
-    <div class="grid4" style="margin-top:12px">
-      <div class="card"><div class="label">Wert</div><div class="metric">${euro(agg.value)}</div><div class="sub">${num(agg.shares,4)} Stück · rechnerisch ${euro(valuePerShare,2)}/Stück</div></div>
-      <div class="card"><div class="label">Annual Dividend</div><div class="metric">${euro(agg.div,2)}</div><div class="sub">${pct(t.div?agg.div/t.div*100:0,1)} deiner Gesamtdividende</div></div>
-      <div class="card"><div class="label">Dividend Yield</div><div class="metric">${pct(agg.yield)}</div><div class="sub">Expected Dividend Growth ${growthCell(dividendRow?.dividendGrowth)}</div></div>
-      <div class="card"><div class="label">Monatlicher Sparplan</div><div class="metric">${euro(agg.monthly)}</div><div class="sub">über alle Depots aggregiert</div></div>
-    </div>
+    ${assetDetailHeroHtml(agg,t,items,meta)}
+    ${assetMetricCardsHtml(agg,t,valuePerShare,dividendRow)}
     <div class="grid3" style="margin-top:12px">
-      <div class="card"><h2>Growth Profile</h2><div class="split"><span class="label">Growth Metric</span><strong>${growthRow?.growthMetric?esc(growthRow.growthMetric):'<span class="data-badge">N/A</span>'}</strong></div><div class="split"><span class="label">Fundamental Growth</span><strong>${growthCell(growthRow?.fundamentalGrowth)}</strong></div><div class="split"><span class="label">FCF/share Growth</span><strong>${growthCell(growthRow?.fcfGrowth)}</strong></div><div class="split"><span class="label">Dividend Growth</span><strong>${growthCell(dividendRow?.dividendGrowth)}</strong></div><div class="split"><span class="label">Portfolio-Beitrag</span><span>${contributionCell(growthRow?.contribution)}</span></div><div class="sub">Fundamental Growth und FCF/share werden wertgewichtet; Dividend Growth wird nach Jahresdividende gewichtet. ${dividendRow?growthSourceBadge(dividendRow.source):""}</div></div>
-      <div class="card"><h2>Dividend Forecast</h2><div class="split"><span class="label">Heute</span><strong>${euro(agg.div,2)}</strong></div><div class="split"><span class="label">in 1 Jahr</span><strong>${euro(one,2)}</strong></div><div class="split"><span class="label">in 5 Jahren</span><strong>${euro(five,2)}</strong></div><div class="sub">Verwendet dieselbe Dividend-Engine wie der Forecast-Tab inklusive Sparplan und Reinvestition.</div></div>
-      <div class="card"><h2>Ausschüttungsmonate</h2>${months.length?`<div class="detail-months">${months.map(m=>`<span class="detail-month">${monthNames[Number(m)-1]||m}</span>`).join("")}</div>`:'<div class="empty-state">Keine Ausschüttungsmonate hinterlegt.</div>'}<div class="sub" style="margin-top:12px">Kalenderdaten kommen aus PortfolioMeta.</div></div>
+      ${assetGrowthProfileHtml(growthRow,dividendRow)}
+      ${assetDividendForecastHtml(agg,one,five)}
+      ${assetDividendMonthsHtml(months,monthNames)}
     </div>
-    <div class="card detail-brokers"><div class="split"><h2>Depot-Aufschlüsselung</h2><button class="btn secondary small" data-action="open-asset-data" data-value="${esc(encodeURIComponent(agg.name))}">In Daten bearbeiten</button></div><div class="tablebox"><table><thead><tr><th>Depot</th><th>Quelle</th><th>Stück</th><th>Wert</th><th>Div. p.a.</th><th>Yield</th><th>Fund. Growth</th><th>Div. Growth</th><th>Sparplan</th></tr></thead><tbody>${items.map(p=>`<tr><td>${esc(p.broker||"–")}</td><td><span class="pill">${p.source==="sheet"?"Sheet":"Manuell"}</span></td><td>${num(p.shares,4)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.value?(+p.annual_div||0)/(+p.value||1)*100:0)}</td><td>${growthCell(parseMaybePct(p.fundamental_growth,false))}</td><td>${positionDividendGrowthCell(p)}</td><td>${euro(p.monthly)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    ${assetBrokerTableHtml(agg,items)}`;
 }
 function openAssetInData(name){switchView("data");const q=document.getElementById("search");if(q){q.value=name;renderData()}setTimeout(()=>q?.scrollIntoView({behavior:"smooth",block:"center"}),50)}
 
@@ -1592,41 +1629,57 @@ function renderGrowthDiagnostics(){
   if(note)note.textContent=`Fundamental Growth: ${fundSource} · Dividend Growth: ${divSource} · Letzter Sync: ${lastSync}. N/A bleibt aus dem jeweiligen Nenner ausgeschlossen.`;
 }
 
-function render(){
-  const t=totals(),agg=aggregate(),rt=propertyTotals(),netWorth=t.financialValue+rt.equity;
-  document.getElementById("mNetWorth").textContent=euro(netWorth);
-  document.getElementById("mNetWorth").className=`metric net-worth-metric ${netWorth<0?"bad":""}`;
-  document.getElementById("mFinancialAssets").textContent=euro(t.financialValue);
-  document.getElementById("mInvestedAssets").textContent=euro(t.investedValue);
-  document.getElementById("mPropertyEquity").textContent=euro(rt.equity);
-  document.getElementById("mCash").textContent=euro(t.cash);
-  document.getElementById("mDebtSummary").textContent=properties.length?`Immobilienwert ${euro(rt.value)} · Restschuld ${euro(rt.debt)}`:"Keine Immobilien erfasst";
+function renderDashboardOverview(t,rt){
+  const netWorth=t.financialValue+rt.equity;
   const propertyMix=Math.max(0,rt.equity),mixTotal=Math.max(0,t.investedValue)+Math.max(0,t.cash)+propertyMix;
   const investedShare=mixTotal?Math.max(0,t.investedValue)/mixTotal*100:0,cashShare=mixTotal?Math.max(0,t.cash)/mixTotal*100:0,propertyShare=mixTotal?propertyMix/mixTotal*100:0;
-  document.getElementById("mPortfolioMix").innerHTML=`<span class="mix-segment mix-invested" style="width:${investedShare}%"></span><span class="mix-segment mix-cash" style="width:${cashShare}%"></span><span class="mix-segment mix-property" style="width:${propertyShare}%"></span>`;
-  document.getElementById("mInvestedShare").textContent=pct(investedShare,1);document.getElementById("mCashShare").textContent=pct(cashShare,1);document.getElementById("mPropertyShare").textContent=pct(propertyShare,1);
-  document.getElementById("mValue").textContent=euro(t.investedValue);
-  document.getElementById("mDiv").textContent=euro(t.div);
-  document.getElementById("mMonthly").textContent=euro(t.div/12)+" / Monat";
-  document.getElementById("mYield").textContent=pct(t.yield);
-  document.getElementById("mFundamentalGrowth").textContent=pctMaybe(t.fundamentalGrowth,1);
-  document.getElementById("mFundamentalCoverage").textContent=coverageText(t.fundamentalCoverage,"gewichtet nach Positionswert");
-  document.getElementById("mExpectedGrowth").textContent=pctMaybe(t.expGrowth,1);
-  document.getElementById("mDividendGrowthCoverage").textContent=coverageText(t.dividendGrowthCoverage,"gewichtet nach Dividendeneinkommen");
-  document.getElementById("mSavings").textContent=euro(t.monthly)+"/Monat";
-  const f5=totalForecast(5,null,1,true);document.getElementById("m5y").textContent=euro(f5);
-  const cagr=t.div>0?((f5/t.div)**(1/5)-1)*100:0;document.getElementById("mIncomeGrowth").textContent=pct(cagr,1);
+  setText("mNetWorth",euro(netWorth));
+  document.getElementById("mNetWorth").className=`metric net-worth-metric ${netWorth<0?"bad":""}`;
+  setText("mFinancialAssets",euro(t.financialValue));
+  setText("mInvestedAssets",euro(t.investedValue));
+  setText("mPropertyEquity",euro(rt.equity));
+  setText("mCash",euro(t.cash));
+  setText("mDebtSummary",properties.length?`Immobilienwert ${euro(rt.value)} · Restschuld ${euro(rt.debt)}`:"Keine Immobilien erfasst");
+  setHtml("mPortfolioMix",`<span class="mix-segment mix-invested" style="width:${investedShare}%"></span><span class="mix-segment mix-cash" style="width:${cashShare}%"></span><span class="mix-segment mix-property" style="width:${propertyShare}%"></span>`);
+  setText("mInvestedShare",pct(investedShare,1));
+  setText("mCashShare",pct(cashShare,1));
+  setText("mPropertyShare",pct(propertyShare,1));
+}
+function renderDashboardInvestment(t,agg){
+  setText("mValue",euro(t.investedValue));
+  setText("mDiv",euro(t.div));
+  setText("mMonthly",euro(t.div/12)+" / Monat");
+  setText("mYield",pct(t.yield));
+  setText("mFundamentalGrowth",pctMaybe(t.fundamentalGrowth,1));
+  setText("mFundamentalCoverage",coverageText(t.fundamentalCoverage,"gewichtet nach Positionswert"));
+  setText("mExpectedGrowth",pctMaybe(t.expGrowth,1));
+  setText("mDividendGrowthCoverage",coverageText(t.dividendGrowthCoverage,"gewichtet nach Dividendeneinkommen"));
+  setText("mSavings",euro(t.monthly)+"/Monat");
+  const f5=totalForecast(5,null,1,true),cagr=t.div>0?((f5/t.div)**(1/5)-1)*100:0;
   const largest=agg[0]||null,top10=agg.slice(0,10).reduce((sum,row)=>sum+row.value,0);
-  document.getElementById("mLargestPosition").textContent=largest?`${largest.name} · ${pct(t.investedValue?largest.value/t.investedValue*100:0,1)}`:"–";
-  document.getElementById("mTop10Concentration").textContent=pct(t.investedValue?top10/t.investedValue*100:0,1);
-  document.getElementById("mGrowthStatus").textContent=`Fund. ${pctMaybe(t.fundamentalCoverage,0)} · Div. ${pctMaybe(t.dividendGrowthCoverage,0)}`;
-
-  let bars="";const brokers=brokerTotals(),max=brokers[0]?.[1]||1;
-  for(const [b,v] of brokers)bars+=`<div class="rowbar clickable" data-action="open-broker-data" data-value="${esc(encodeURIComponent(b))}" title="${esc(b)} bearbeiten"><div>${esc(b)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${euro(v)}</div></div>`;
-  document.getElementById("brokerBars").innerHTML=bars;
-
-  document.getElementById("portfolioBody").innerHTML=agg.map(a=>`<tr class="asset-row" data-asset="${encodeURIComponent(a.name)}" title="${esc(a.name)} Details öffnen"><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${num(a.shares)}</td><td>${euro(a.value)}</td><td>${euro(a.div,2)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td><td>${pct(t.value?a.value/t.value*100:0,1)}</td></tr>`).join("");
-  document.getElementById("aggCount").textContent=agg.length+" Positionen";
+  setText("m5y",euro(f5));
+  setText("mIncomeGrowth",pct(cagr,1));
+  setText("mLargestPosition",largest?`${largest.name} · ${pct(t.investedValue?largest.value/t.investedValue*100:0,1)}`:"–");
+  setText("mTop10Concentration",pct(t.investedValue?top10/t.investedValue*100:0,1));
+  setText("mGrowthStatus",`Fund. ${pctMaybe(t.fundamentalCoverage,0)} · Div. ${pctMaybe(t.dividendGrowthCoverage,0)}`);
+}
+function renderBrokerBars(){
+  const brokers=brokerTotals(),max=brokers[0]?.[1]||1;
+  setHtml("brokerBars",brokers.map(([b,v])=>`<div class="rowbar clickable" data-action="open-broker-data" data-value="${esc(encodeURIComponent(b))}" title="${esc(b)} bearbeiten"><div>${esc(b)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${euro(v)}</div></div>`).join(""));
+}
+function portfolioOverviewRow(a,t){
+  return `<tr class="asset-row" data-asset="${encodeURIComponent(a.name)}" title="${esc(a.name)} Details öffnen"><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${num(a.shares)}</td><td>${euro(a.value)}</td><td>${euro(a.div,2)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td><td>${pct(t.value?a.value/t.value*100:0,1)}</td></tr>`;
+}
+function renderPortfolioOverviewTable(agg,t){
+  setHtml("portfolioBody",agg.map(a=>portfolioOverviewRow(a,t)).join(""));
+  setText("aggCount",agg.length+" Positionen");
+}
+function render(){
+  const t=totals(),agg=aggregate(),rt=propertyTotals();
+  renderDashboardOverview(t,rt);
+  renderDashboardInvestment(t,agg);
+  renderBrokerBars();
+  renderPortfolioOverviewTable(agg,t);
 
   renderDividends();renderForecast();renderData();renderRealEstate();renderAnalysis();renderGrowth();renderCalendar();renderHistory();renderGoals();renderAllocation();renderGrowthDiagnostics();if(selectedAssetName)renderAssetDetail(selectedAssetName);
 }
