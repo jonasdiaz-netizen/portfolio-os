@@ -808,6 +808,37 @@ const GOALS_KEY = "portfolio_os_v11_goals";
 const ALLOCATION_KEY = "portfolio_os_v11_allocation";
 const GROWTH_KPI_KEY = "portfolio_os_v12_growth_kpis";
 const DEFAULT_SYNC_SECRET = "";
+const SHEET_POSITION_FIELDS = {
+  fundamentalGrowth: [
+    "fundamental_growth","expected_fundamental_growth","expected_fundamental_growth_3_5y",
+    "expected_fundamental_growth_3-5y","Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
+  ],
+  dividendGrowth: [
+    "dividend_growth","expected_dividend_growth","expected_dividend_growth_3_5y",
+    "expected_dividend_growth_3-5y","Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
+  ],
+  fcfGrowth: [
+    "fcf_share_growth","fcf_per_share_growth","fcf_share_growth_3_5y",
+    "FCF/share Growth 3–5Y","FCF/share Growth 3-5Y"
+  ],
+  growthMetric: ["growth_metric","Growth Metric"]
+};
+const SHEET_PORTFOLIO_KPI_FIELDS = {
+  fundamentalGrowth: [
+    "fundamental_growth","expected_fundamental_growth","Expected Fundamental Growth",
+    "Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
+  ],
+  dividendGrowth: [
+    "dividend_growth","expected_dividend_growth","Expected Dividend Growth",
+    "Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
+  ],
+  fundamentalCoverage: [
+    "fundamental_growth_coverage","expected_fundamental_growth_coverage","Fundamental Growth Coverage"
+  ],
+  dividendCoverage: [
+    "dividend_growth_coverage","expected_dividend_growth_coverage","Dividend Growth Coverage"
+  ]
+};
 
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function prop(obj,names){
@@ -830,32 +861,23 @@ function parseMaybePct(value,scaleFraction=true){
   if(!Number.isFinite(n))return null;
   return scaleFraction&&Math.abs(n)>0&&Math.abs(n)<=1?n*100:n;
 }
+function mapSheetPosition(p,source="manual"){
+  const fundamentalGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fundamentalGrowth),false);
+  const dividendGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.dividendGrowth),false);
+  const fcfGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fcfGrowth),false);
+  const expectedGrowth=dividendGrowth ?? parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false) ?? defaultExpectedGrowth(p.name);
+  return {...p,
+    source: p.source || source,
+    source_key: p.source_key || "",
+    growth_metric: prop(p,SHEET_POSITION_FIELDS.growthMetric) || p.growth_metric || "",
+    fundamental_growth: fundamentalGrowth,
+    expected_dividend_growth: dividendGrowth,
+    fcf_share_growth: fcfGrowth,
+    expected_growth: expectedGrowth
+  };
+}
 function normalizePositions(arr){
-  return (arr||[]).map(p=>{
-    const fundamentalGrowth=parseMaybePct(prop(p,[
-      "fundamental_growth","expected_fundamental_growth","expected_fundamental_growth_3_5y",
-      "expected_fundamental_growth_3-5y","Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
-    ]),false);
-    const dividendGrowth=parseMaybePct(prop(p,[
-      "dividend_growth","expected_dividend_growth","expected_dividend_growth_3_5y",
-      "expected_dividend_growth_3-5y",
-      "Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
-    ]),false);
-    const fcfGrowth=parseMaybePct(prop(p,[
-      "fcf_share_growth","fcf_per_share_growth","fcf_share_growth_3_5y",
-      "FCF/share Growth 3–5Y","FCF/share Growth 3-5Y"
-    ]),false);
-    const expectedGrowth=dividendGrowth ?? parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false) ?? defaultExpectedGrowth(p.name);
-    return {...p,
-      source: p.source || "manual",
-      source_key: p.source_key || "",
-      growth_metric: prop(p,["growth_metric","Growth Metric"]) || p.growth_metric || "",
-      fundamental_growth: fundamentalGrowth,
-      expected_dividend_growth: dividendGrowth,
-      fcf_share_growth: fcfGrowth,
-      expected_growth: expectedGrowth
-    };
-  });
+  return (arr||[]).map(p=>mapSheetPosition(p));
 }
 function defaultExpectedGrowth(name){
   const n=String(name||"").toLowerCase();
@@ -946,20 +968,10 @@ function normalizeGrowthKpis(raw){
     raw=obj;
   }
   if(!raw||typeof raw!=="object")return null;
-  const fundamental=parseMaybePct(prop(raw,[
-    "fundamental_growth","expected_fundamental_growth","Expected Fundamental Growth",
-    "Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
-  ]),false);
-  const dividend=parseMaybePct(prop(raw,[
-    "dividend_growth","expected_dividend_growth","Expected Dividend Growth",
-    "Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
-  ]),false);
-  const fundamentalCoverage=parseMaybePct(prop(raw,[
-    "fundamental_growth_coverage","expected_fundamental_growth_coverage","Fundamental Growth Coverage"
-  ]),false);
-  const dividendCoverage=parseMaybePct(prop(raw,[
-    "dividend_growth_coverage","expected_dividend_growth_coverage","Dividend Growth Coverage"
-  ]),false);
+  const fundamental=parseMaybePct(prop(raw,SHEET_PORTFOLIO_KPI_FIELDS.fundamentalGrowth),false);
+  const dividend=parseMaybePct(prop(raw,SHEET_PORTFOLIO_KPI_FIELDS.dividendGrowth),false);
+  const fundamentalCoverage=parseMaybePct(prop(raw,SHEET_PORTFOLIO_KPI_FIELDS.fundamentalCoverage),false);
+  const dividendCoverage=parseMaybePct(prop(raw,SHEET_PORTFOLIO_KPI_FIELDS.dividendCoverage),false);
   if(fundamental===null&&dividend===null&&fundamentalCoverage===null&&dividendCoverage===null)return null;
   return {fundamental_growth:fundamental,dividend_growth:dividend,fundamental_growth_coverage:fundamentalCoverage,dividend_growth_coverage:dividendCoverage};
 }
@@ -970,6 +982,21 @@ function extractPortfolioGrowthKpis(data){
     if(kpis)return kpis;
   }
   return null;
+}
+function mapSyncPayload(data){
+  const growthKpis=extractPortfolioGrowthKpis(data);
+  const incoming=(data?.positions||[]).map(p=>mapSheetPosition({...p,source:"sheet"},"sheet"));
+  return {
+    cashTotal:Number.isFinite(Number(data?.cash_total))?Number(data.cash_total):null,
+    meta:Array.isArray(data?.meta)?data.meta:null,
+    history:Array.isArray(data?.history)?data.history:null,
+    growthKpis,
+    privateDefaults:Array.isArray(data?.private_defaults)?data.private_defaults:[],
+    positions:incoming,
+    health:data?.health||{error_count:0,errors:[]},
+    warnings:Array.isArray(data?.warnings)?data.warnings:[],
+    syncedAt:data?.synced_at
+  };
 }
 function hasDirectDividendGrowth(){
   return positions.some(p=>(+p.annual_div||0)>0&&parseMaybePct(p.expected_dividend_growth,false)!==null);
@@ -2039,18 +2066,18 @@ async function syncFromSheet(isAuto=false){
     const syncUrl=base+sep+"secret="+encodeURIComponent(secret)+"&manual_present=1&manual_value="+encodeURIComponent(manualValue)+"&manual_div="+encodeURIComponent(manualDiv)+"&manual_monthly="+encodeURIComponent(manualMonthly);
     const data=await jsonp(syncUrl,22000);
     if(!data||!data.ok)throw new Error(data?.error||"Unbekannter Sync-Fehler");
-    if(Number.isFinite(Number(data.cash_total))){
-      localStorage.setItem(CASH_TOTAL_KEY,String(Number(data.cash_total)));
+    const mapped=mapSyncPayload(data);
+    if(mapped.cashTotal!==null){
+      localStorage.setItem(CASH_TOTAL_KEY,String(mapped.cashTotal));
       loadCashEditor();
     }
-    if(Array.isArray(data.meta)){portfolioMeta=data.meta;localStorage.setItem(META_KEY,JSON.stringify(portfolioMeta));}
-    if(Array.isArray(data.history)){portfolioHistory=data.history;localStorage.setItem(HISTORY_KEY,JSON.stringify(portfolioHistory));}
-    const syncedGrowthKpis=extractPortfolioGrowthKpis(data);
+    if(mapped.meta){portfolioMeta=mapped.meta;localStorage.setItem(META_KEY,JSON.stringify(portfolioMeta));}
+    if(mapped.history){portfolioHistory=mapped.history;localStorage.setItem(HISTORY_KEY,JSON.stringify(portfolioHistory));}
+    const syncedGrowthKpis=mapped.growthKpis;
     if(syncedGrowthKpis){portfolioGrowthKpis=syncedGrowthKpis;localStorage.setItem(GROWTH_KPI_KEY,JSON.stringify(portfolioGrowthKpis));}
     else{portfolioGrowthKpis=null;localStorage.removeItem(GROWTH_KPI_KEY);}
-    applyPrivateDefaults(data.private_defaults||[]);
-    let incoming=normalizePositions(data.positions||[]).map(p=>{
-      p.source="sheet";
+    applyPrivateDefaults(mapped.privateDefaults);
+    let incoming=mapped.positions.map(p=>{
       const ov=growthOverrides[growthKey(p)];
       const sheetDividendGrowth=parseMaybePct(p.expected_dividend_growth,false);
       p.expected_growth=sheetDividendGrowth ?? parseMaybePct(ov,false) ?? parseMaybePct(p.expected_growth,false) ?? defaultExpectedGrowth(p.name);
@@ -2065,13 +2092,13 @@ async function syncFromSheet(isAuto=false){
       return true;
     });
     positions=[...incoming,...manual];
-    const syncDate=new Date(data.synced_at||Date.now());
+    const syncDate=new Date(mapped.syncedAt||Date.now());
     const stamp=(Number.isNaN(syncDate.getTime())?new Date():syncDate).toLocaleString("de-DE");
     localStorage.setItem("portfolio_os_v4_last_sync",stamp);
-    saveHealth(data.health||{error_count:0,errors:[]},data.warnings||[]);
+    saveHealth(mapped.health,mapped.warnings);
     persist();render();
 
-    const warningCount=Math.max(0,Math.trunc(finiteOr(data.health?.error_count,0)))+(Array.isArray(data.warnings)?data.warnings.length:0);
+    const warningCount=Math.max(0,Math.trunc(finiteOr(mapped.health?.error_count,0)))+mapped.warnings.length;
     setSyncStatus(`Letzter Sync: ${stamp} · ${incoming.length} Sheet-Positionen${warningCount?` · ⚠ ${warningCount} Hinweise`:""}`,"good");
   }catch(err){
     setSyncStatus("Sync fehlgeschlagen: "+String(err.message||err),"bad");
