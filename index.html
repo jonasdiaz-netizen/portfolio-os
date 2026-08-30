@@ -354,6 +354,8 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
 .net-worth-metric{font-size:36px;margin-top:2px}
 .net-worth-projection{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}
 .net-worth-projection strong{color:var(--text)}
+.projection-savings{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px;color:var(--muted);font-size:12px}
+.projection-savings input{width:96px;background:#0f141a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:6px 8px;text-align:right}
 .overview-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:9px;position:relative;z-index:1}
 .overview-stat{padding:12px;border:1px solid var(--line-soft);border-radius:11px;background:rgba(9,14,22,.58)}
 .overview-stat strong{font-size:15px;display:block;overflow-wrap:anywhere}
@@ -455,6 +457,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
         <div class="label">Gesamtvermögen / Net Worth</div>
         <div class="metric net-worth-metric" id="mNetWorth">–</div>
         <div class="net-worth-projection" id="mNetWorthProjection">12M-Projektion: –</div>
+        <label class="projection-savings">Sparrate / Monat <input id="projectionSavingsInput" type="number" min="0" step="50"></label>
         <div class="sub">Financial Assets + Netto-Eigenkapital der Immobilien</div>
       </div>
       <div class="overview-stats">
@@ -793,7 +796,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v14.3 · Gesamtportfolio-Dashboard · 12M-Projektion · Krypto-Allokation · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v14.4 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -811,6 +814,7 @@ const HISTORY_KEY = "portfolio_os_v10_history";
 const GOALS_KEY = "portfolio_os_v11_goals";
 const ALLOCATION_KEY = "portfolio_os_v11_allocation";
 const GROWTH_KPI_KEY = "portfolio_os_v12_growth_kpis";
+const PROJECTION_SAVINGS_KEY = "portfolio_os_v13_projection_savings";
 const DEFAULT_SYNC_SECRET = "";
 const SHEET_POSITION_FIELDS = {
   fundamentalGrowth: [
@@ -935,6 +939,20 @@ function getCashTotal(){
   if(raw===null || raw==="") return 0;
   const n=Number(raw);
   return Number.isFinite(n)?n:0;
+}
+function getProjectionMonthlySavings(){
+  const raw=localStorage.getItem(PROJECTION_SAVINGS_KEY);
+  if(raw!==null&&raw!==""){
+    const n=Number(raw);
+    return Number.isFinite(n)?Math.max(0,n):0;
+  }
+  return Math.max(0,positions.reduce((sum,p)=>sum+(+p.monthly||0),0));
+}
+function saveProjectionMonthlySavings(){
+  const el=document.getElementById("projectionSavingsInput");
+  if(!el)return;
+  localStorage.setItem(PROJECTION_SAVINGS_KEY,String(Math.max(0,+el.value||0)));
+  render();
 }
 function euro(x,dec=0){return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:dec}).format(Number(x)||0)}
 function pct(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{minimumFractionDigits:dec,maximumFractionDigits:dec})+"%"}
@@ -1298,7 +1316,8 @@ function netWorthProjection12m(t){
   const invested=projectedInvestedValue12m();
   const cash=Math.max(0,t.cash)*1.025;
   const property=propertyEquityAfterMonths(12);
-  return {value:invested.value+cash+property,coverage:invested.coverage};
+  const savings=getProjectionMonthlySavings()*12;
+  return {value:invested.value+cash+property+savings,coverage:invested.coverage,savings};
 }
 function analysisRows(){
   const rows=positions.map(p=>{const meta=positionClassification(p);return {name:p.name,value:+p.value||0,sector:meta.sector||"Nicht zugeordnet",region:meta.region||"Nicht zugeordnet",asset_class:meta.asset_class||"Nicht zugeordnet",covered:Boolean(meta.sector&&meta.region&&meta.asset_class)}});
@@ -1753,7 +1772,9 @@ function renderDashboardOverview(t,rt){
   const propertyMix=Math.max(0,rt.equity),mixTotal=coreInvestedValue+cryptoValue+Math.max(0,t.cash)+propertyMix;
   const investedShare=mixTotal?coreInvestedValue/mixTotal*100:0,cryptoShare=mixTotal?cryptoValue/mixTotal*100:0,cashShare=mixTotal?Math.max(0,t.cash)/mixTotal*100:0,propertyShare=mixTotal?propertyMix/mixTotal*100:0;
   setText("mNetWorth",euro(netWorth));
-  setHtml("mNetWorthProjection",`12M-Projektion: <strong>${euro(projection.value)}</strong> · ${projectionDelta>=0?"+":""}${euro(projectionDelta)} (${projectionDelta>=0?"+":""}${pct(projectionPct,1)})`);
+  setHtml("mNetWorthProjection",`12M-Projektion: <strong>${euro(projection.value)}</strong> · ${projectionDelta>=0?"+":""}${euro(projectionDelta)} (${projectionDelta>=0?"+":""}${pct(projectionPct,1)}) · inkl. ${euro(projection.savings)}`);
+  const savingsInput=document.getElementById("projectionSavingsInput");
+  if(savingsInput&&document.activeElement!==savingsInput)savingsInput.value=getProjectionMonthlySavings();
   document.getElementById("mNetWorth").className=`metric net-worth-metric ${netWorth<0?"bad":""}`;
   setText("mFinancialAssets",euro(t.financialValue));
   setText("mInvestedAssets",euro(coreInvestedValue));
@@ -2133,6 +2154,7 @@ document.getElementById("saveBtn").addEventListener("click",()=>{
 });
 document.getElementById("cancelBtn").addEventListener("click",clearForm);
 document.getElementById("cashSaveBtn").addEventListener("click",saveCashManual);
+document.getElementById("projectionSavingsInput").addEventListener("change",saveProjectionMonthlySavings);
 document.getElementById("search").addEventListener("input",renderData);
 ["fg","fc","fr"].forEach(id=>document.getElementById(id).addEventListener("input",renderForecast));
 
@@ -2147,6 +2169,7 @@ function createBackup(){
     positions,
     properties,
     cashTotal:getCashTotal(),
+    projectionMonthlySavings:getProjectionMonthlySavings(),
     growthOverrides,
     goals,
     allocationTargets,
@@ -2172,6 +2195,9 @@ function restoreBackup(backup){
 
   if(Object.prototype.hasOwnProperty.call(backup,"cashTotal")){
     localStorage.setItem(CASH_TOTAL_KEY,String(Math.max(0,finiteOr(backup.cashTotal,0))));
+  }
+  if(Object.prototype.hasOwnProperty.call(backup,"projectionMonthlySavings")){
+    localStorage.setItem(PROJECTION_SAVINGS_KEY,String(Math.max(0,finiteOr(backup.projectionMonthlySavings,0))));
   }
   if(Array.isArray(backup.portfolioMeta)){
     portfolioMeta=backup.portfolioMeta;
@@ -2217,7 +2243,7 @@ document.getElementById("importFile").addEventListener("change",async e=>{
 document.getElementById("saveSyncBtn").addEventListener("click",saveSyncSettings);
 document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSettings();syncFromSheet(false)});
 
-document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;localStorage.removeItem(GROWTH_KPI_KEY);persist();clearForm();clearPropertyForm();clearGoalForm();render()});
+document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;localStorage.removeItem(GROWTH_KPI_KEY);localStorage.removeItem(PROJECTION_SAVINGS_KEY);persist();clearForm();clearPropertyForm();clearGoalForm();render()});
 
 function loadSyncSettings(){
   document.getElementById("syncUrl").value=localStorage.getItem(SYNC_URL_KEY)||"";
