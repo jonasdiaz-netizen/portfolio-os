@@ -352,6 +352,8 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
 .dashboard-overview{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(360px,1.2fr);gap:18px;margin-bottom:12px;overflow:hidden}
 .dashboard-overview:after{content:"";position:absolute;width:260px;height:260px;right:-110px;top:-150px;border-radius:50%;background:radial-gradient(circle,rgba(114,151,255,.15),transparent 68%);pointer-events:none}
 .net-worth-metric{font-size:36px;margin-top:2px}
+.net-worth-projection{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}
+.net-worth-projection strong{color:var(--text)}
 .overview-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:9px;position:relative;z-index:1}
 .overview-stat{padding:12px;border:1px solid var(--line-soft);border-radius:11px;background:rgba(9,14,22,.58)}
 .overview-stat strong{font-size:15px;display:block;overflow-wrap:anywhere}
@@ -452,6 +454,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
       <div>
         <div class="label">Gesamtvermögen / Net Worth</div>
         <div class="metric net-worth-metric" id="mNetWorth">–</div>
+        <div class="net-worth-projection" id="mNetWorthProjection">12M-Projektion: –</div>
         <div class="sub">Financial Assets + Netto-Eigenkapital der Immobilien</div>
       </div>
       <div class="overview-stats">
@@ -790,7 +793,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v14.2 · Gesamtportfolio-Dashboard · Krypto-Allokation · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v14.3 · Gesamtportfolio-Dashboard · 12M-Projektion · Krypto-Allokation · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -1268,8 +1271,34 @@ function isCryptoPosition(p){
   const meta=positionClassification(p);
   return /\b(krypto|crypto)\b/i.test([meta.asset_class,p?.source_sheet,p?.broker].filter(Boolean).join(" "));
 }
+function isGoldPosition(p){
+  const meta=positionClassification(p);
+  return /\b(gold|edelmetall|precious metal|physical gold|xetra-gold)\b/i.test([p?.name,meta.asset_class,meta.sector,p?.broker].filter(Boolean).join(" "));
+}
 function cryptoPortfolioValue(){
   return positions.reduce((sum,p)=>sum+(isCryptoPosition(p)?(+p.value||0):0),0);
+}
+function positionProjectionRate12m(p){
+  if(isCryptoPosition(p)||isGoldPosition(p))return 8;
+  return parseMaybePct(p.fundamental_growth,false);
+}
+function projectedInvestedValue12m(){
+  let value=0,covered=0,total=0;
+  for(const p of positions){
+    const current=Math.max(0,+p.value||0);
+    if(current<=0)continue;
+    total+=current;
+    const rate=positionProjectionRate12m(p);
+    if(rate!==null)covered+=current;
+    value+=current*(1+(rate??0)/100);
+  }
+  return {value,coverage:total?covered/total*100:null};
+}
+function netWorthProjection12m(t){
+  const invested=projectedInvestedValue12m();
+  const cash=Math.max(0,t.cash)*1.025;
+  const property=propertyEquityAfterMonths(12);
+  return {value:invested.value+cash+property,coverage:invested.coverage};
 }
 function analysisRows(){
   const rows=positions.map(p=>{const meta=positionClassification(p);return {name:p.name,value:+p.value||0,sector:meta.sector||"Nicht zugeordnet",region:meta.region||"Nicht zugeordnet",asset_class:meta.asset_class||"Nicht zugeordnet",covered:Boolean(meta.sector&&meta.region&&meta.asset_class)}});
@@ -1716,11 +1745,15 @@ function renderGrowthDiagnostics(){
 
 function renderDashboardOverview(t,rt){
   const netWorth=t.financialValue+rt.equity;
+  const projection=netWorthProjection12m(t);
+  const projectionDelta=projection.value-netWorth;
+  const projectionPct=netWorth?projectionDelta/netWorth*100:0;
   const cryptoValue=Math.max(0,cryptoPortfolioValue());
   const coreInvestedValue=Math.max(0,t.investedValue-cryptoValue);
   const propertyMix=Math.max(0,rt.equity),mixTotal=coreInvestedValue+cryptoValue+Math.max(0,t.cash)+propertyMix;
   const investedShare=mixTotal?coreInvestedValue/mixTotal*100:0,cryptoShare=mixTotal?cryptoValue/mixTotal*100:0,cashShare=mixTotal?Math.max(0,t.cash)/mixTotal*100:0,propertyShare=mixTotal?propertyMix/mixTotal*100:0;
   setText("mNetWorth",euro(netWorth));
+  setHtml("mNetWorthProjection",`12M-Projektion: <strong>${euro(projection.value)}</strong> · ${projectionDelta>=0?"+":""}${euro(projectionDelta)} (${projectionDelta>=0?"+":""}${pct(projectionPct,1)})`);
   document.getElementById("mNetWorth").className=`metric net-worth-metric ${netWorth<0?"bad":""}`;
   setText("mFinancialAssets",euro(t.financialValue));
   setText("mInvestedAssets",euro(coreInvestedValue));
