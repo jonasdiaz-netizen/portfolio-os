@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v18-crypto-allocation`;
+const CACHE = `${CACHE_PREFIX}v19-net-worth-projection`;
 const ASSETS = [
   "./index.html",
   "./manifest.webmanifest",
