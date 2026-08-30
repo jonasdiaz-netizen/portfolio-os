@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v19-net-worth-projection`;
+const CACHE = `${CACHE_PREFIX}v20-editable-projection-savings`;
 const ASSETS = [
   "./index.html",
   "./manifest.webmanifest",
