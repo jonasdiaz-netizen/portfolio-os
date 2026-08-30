@@ -1,0 +1,46 @@
+{
+  "description": "Position-derived growth excludes N/A values from the denominator.",
+  "payload": {
+    "ok": true,
+    "positions": [
+      {
+        "name": "Alpha Compounder",
+        "broker": "Scalable II",
+        "value": 1000,
+        "annual_div": 50,
+        "Growth Metric": "EPS/share",
+        "Expected Fundamental Growth 3–5Y": 10,
+        "Expected Dividend Growth 3–5Y": 5
+      },
+      {
+        "name": "Derivative Hedge",
+        "broker": "Scalable II",
+        "value": 3000,
+        "annual_div": 100,
+        "Growth Metric": "N/A",
+        "Expected Fundamental Growth 3–5Y": "N/A",
+        "Expected Dividend Growth 3–5Y": "N/A"
+      },
+      {
+        "name": "Gamma Quality",
+        "broker": "Scalable II",
+        "value": 1000,
+        "annual_div": 50,
+        "Growth Metric": "FCF/share",
+        "Expected Fundamental Growth 3–5Y": 20,
+        "Expected Dividend Growth 3–5Y": 10
+      }
+    ],
+    "health": {
+      "error_count": "0",
+      "errors": []
+    },
+    "warnings": []
+  },
+  "expected": {
+    "fundamentalGrowth": 15,
+    "fundamentalCoverage": 40,
+    "dividendGrowth": 7.5,
+    "dividendGrowthCoverage": 50
+  }
+}

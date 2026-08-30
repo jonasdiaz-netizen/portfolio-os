@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 14,
+  "appVersion": "14.0",
+  "exportedAt": "2026-08-30T08:00:00.000Z",
+  "positions": [
+    {
+      "name": "Alpha Compounder",
+      "value": 1000,
+      "annual_div": 50,
+      "fundamental_growth": 10,
+      "expected_dividend_growth": 5
+    }
+  ],
+  "properties": [],
+  "cashTotal": 2500,
+  "growthOverrides": {},
+  "goals": [
+    {
+      "name": "500k",
+      "type": "wealth",
+      "target": 500000
+    }
+  ],
+  "allocationTargets": {
+    "asset_class": {
+      "Equity": 80,
+      "Cash": 20
+    }
+  },
+  "portfolioGrowthKpis": {
+    "fundamental_growth": 12.7,
+    "dividend_growth": 6.8,
+    "fundamental_growth_coverage": 77.7,
+    "dividend_growth_coverage": 80.7
+  },
+  "portfolioMeta": [],
+  "portfolioHistory": [],
+  "health": {
+    "error_count": 0,
+    "errors": []
+  },
+  "lastSync": "30.08.2026, 10:00:00"
+}

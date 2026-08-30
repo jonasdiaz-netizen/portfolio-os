@@ -1,0 +1,45 @@
+{
+  "description": "Portfolio-level growth KPIs should win over position-derived values.",
+  "payload": {
+    "ok": true,
+    "cash_total": 2500,
+    "portfolio_kpis": {
+      "fundamental_growth": 12.7,
+      "dividend_growth": 6.8,
+      "fundamental_growth_coverage": 77.7,
+      "dividend_growth_coverage": 80.7
+    },
+    "positions": [
+      {
+        "name": "NVIDIA",
+        "broker": "Scalable II",
+        "value": 1000,
+        "annual_div": 10,
+        "Growth Metric": "EPS/share",
+        "Expected Fundamental Growth 3–5Y": 15,
+        "Expected Dividend Growth 3–5Y": 5
+      },
+      {
+        "name": "Gold ETC",
+        "broker": "Scalable II",
+        "value": 500,
+        "annual_div": 0,
+        "Growth Metric": "N/A",
+        "Expected Fundamental Growth 3–5Y": "N/A",
+        "Expected Dividend Growth 3–5Y": "N/A"
+      }
+    ],
+    "health": {
+      "error_count": 0,
+      "errors": []
+    },
+    "warnings": [],
+    "synced_at": "2026-08-30T08:00:00.000Z"
+  },
+  "expected": {
+    "fundamentalGrowth": 12.7,
+    "dividendGrowth": 6.8,
+    "fundamentalCoverage": 77.7,
+    "dividendGrowthCoverage": 80.7
+  }
+}

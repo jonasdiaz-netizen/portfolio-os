@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
+const fixturesDir = path.join(__dirname, "fixtures");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 
@@ -16,6 +17,154 @@ function unique(values) {
 
 function includesAll(haystack, values) {
   return values.every(value => haystack.includes(value));
+}
+
+function readFixture(name) {
+  return JSON.parse(fs.readFileSync(path.join(fixturesDir, name), "utf8"));
+}
+
+function closeTo(actual, expected, tolerance = 0.000001) {
+  if (expected === null) return actual === null;
+  return Math.abs(Number(actual) - Number(expected)) <= tolerance;
+}
+
+const sheetPositionFields = {
+  fundamentalGrowth: [
+    "fundamental_growth","expected_fundamental_growth","expected_fundamental_growth_3_5y",
+    "expected_fundamental_growth_3-5y","Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
+  ],
+  dividendGrowth: [
+    "dividend_growth","expected_dividend_growth","expected_dividend_growth_3_5y",
+    "expected_dividend_growth_3-5y","Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
+  ],
+  fcfGrowth: [
+    "fcf_share_growth","fcf_per_share_growth","fcf_share_growth_3_5y",
+    "FCF/share Growth 3–5Y","FCF/share Growth 3-5Y"
+  ],
+  growthMetric: ["growth_metric","Growth Metric"]
+};
+
+const sheetPortfolioKpiFields = {
+  fundamentalGrowth: [
+    "fundamental_growth","expected_fundamental_growth","Expected Fundamental Growth",
+    "Expected Fundamental Growth 3–5Y","Expected Fundamental Growth 3-5Y"
+  ],
+  dividendGrowth: [
+    "dividend_growth","expected_dividend_growth","Expected Dividend Growth",
+    "Expected Dividend Growth 3–5Y","Expected Dividend Growth 3-5Y"
+  ],
+  fundamentalCoverage: [
+    "fundamental_growth_coverage","expected_fundamental_growth_coverage","Fundamental Growth Coverage"
+  ],
+  dividendCoverage: [
+    "dividend_growth_coverage","expected_dividend_growth_coverage","Dividend Growth Coverage"
+  ]
+};
+
+function prop(obj, names) {
+  if (!obj || typeof obj !== "object") return undefined;
+  for (const name of names) {
+    if (Object.prototype.hasOwnProperty.call(obj, name)) return obj[name];
+    const match = Object.keys(obj).find(key => String(key).trim().toLowerCase() === String(name).trim().toLowerCase());
+    if (match !== undefined) return obj[match];
+  }
+  return undefined;
+}
+
+function parseMaybePct(value, scaleFraction = true) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || /^n\/?a$/i.test(trimmed) || /^na$/i.test(trimmed) || /^-$/.test(trimmed)) return null;
+    value = trimmed.replace("%", "").replace(",", ".");
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  return scaleFraction && Math.abs(number) > 0 && Math.abs(number) <= 1 ? number * 100 : number;
+}
+
+function defaultExpectedGrowth(name) {
+  const normalized = String(name || "").toLowerCase();
+  if (normalized === "microsoft") return 9;
+  if (normalized === "nvidia") return 15;
+  if (normalized === "alphabet") return 12;
+  return 5;
+}
+
+function mapFixturePosition(position, source = "manual") {
+  const fundamentalGrowth = parseMaybePct(prop(position, sheetPositionFields.fundamentalGrowth), false);
+  const dividendGrowth = parseMaybePct(prop(position, sheetPositionFields.dividendGrowth), false);
+  const fcfGrowth = parseMaybePct(prop(position, sheetPositionFields.fcfGrowth), false);
+  const expectedGrowth = dividendGrowth ?? parseMaybePct(position.expected_growth, false) ?? parseMaybePct(position.growth, false) ?? defaultExpectedGrowth(position.name);
+  return {
+    ...position,
+    source: position.source || source,
+    source_key: position.source_key || "",
+    growth_metric: prop(position, sheetPositionFields.growthMetric) || position.growth_metric || "",
+    fundamental_growth: fundamentalGrowth,
+    expected_dividend_growth: dividendGrowth,
+    fcf_share_growth: fcfGrowth,
+    expected_growth: expectedGrowth
+  };
+}
+
+function normalizeFixtureGrowthKpis(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const fundamental = parseMaybePct(prop(raw, sheetPortfolioKpiFields.fundamentalGrowth), false);
+  const dividend = parseMaybePct(prop(raw, sheetPortfolioKpiFields.dividendGrowth), false);
+  const fundamentalCoverage = parseMaybePct(prop(raw, sheetPortfolioKpiFields.fundamentalCoverage), false);
+  const dividendCoverage = parseMaybePct(prop(raw, sheetPortfolioKpiFields.dividendCoverage), false);
+  if (fundamental === null && dividend === null && fundamentalCoverage === null && dividendCoverage === null) return null;
+  return {
+    fundamental_growth: fundamental,
+    dividend_growth: dividend,
+    fundamental_growth_coverage: fundamentalCoverage,
+    dividend_growth_coverage: dividendCoverage
+  };
+}
+
+function extractFixtureGrowthKpis(data) {
+  const candidates = [data, data?.portfolio_kpis, data?.growth_kpis, data?.dashboard, data?.metrics, data?.portfolio_metrics];
+  for (const candidate of candidates) {
+    const kpis = normalizeFixtureGrowthKpis(candidate);
+    if (kpis) return kpis;
+  }
+  return null;
+}
+
+function weightedGrowth(positions, valueField, weightField) {
+  let weighted = 0;
+  let eligibleWeight = 0;
+  let totalWeight = 0;
+  for (const position of positions) {
+    const weight = Number(position[weightField]) || 0;
+    if (weight <= 0) continue;
+    totalWeight += weight;
+    const value = parseMaybePct(position[valueField], false);
+    if (value === null) continue;
+    weighted += weight * value;
+    eligibleWeight += weight;
+  }
+  return {
+    value: eligibleWeight ? weighted / eligibleWeight : null,
+    coverage: totalWeight ? eligibleWeight / totalWeight * 100 : null
+  };
+}
+
+function fixtureGrowthTotals(payload) {
+  const positions = (payload.positions || []).map(position => mapFixturePosition({ ...position, source: "sheet" }, "sheet"));
+  const portfolioGrowthKpis = extractFixtureGrowthKpis(payload);
+  const fromPositionsFundamental = weightedGrowth(positions, "fundamental_growth", "value");
+  const fromPositionsDividend = weightedGrowth(positions, "expected_dividend_growth", "annual_div");
+  const legacyDividend = weightedGrowth(positions, "expected_growth", "annual_div");
+  const effectiveDividend = fromPositionsDividend.value !== null ? fromPositionsDividend : legacyDividend;
+  return {
+    positions,
+    fundamentalGrowth: portfolioGrowthKpis?.fundamental_growth ?? fromPositionsFundamental.value,
+    fundamentalCoverage: portfolioGrowthKpis?.fundamental_growth_coverage ?? fromPositionsFundamental.coverage,
+    dividendGrowth: portfolioGrowthKpis?.dividend_growth ?? effectiveDividend.value,
+    dividendGrowthCoverage: portfolioGrowthKpis?.dividend_growth_coverage ?? effectiveDividend.coverage
+  };
 }
 
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
@@ -81,6 +230,37 @@ check("service worker cache version bumped", sw.includes("v15-code-hardening"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
+
+[
+  "sync-payload-full-growth.json",
+  "sync-payload-partial-na.json",
+  "sync-payload-legacy-fallback.json",
+  "backup-v14.json"
+].forEach(name => {
+  check(`fixture ${name} exists`, fs.existsSync(path.join(fixturesDir, name)));
+});
+
+[
+  "sync-payload-full-growth.json",
+  "sync-payload-partial-na.json",
+  "sync-payload-legacy-fallback.json"
+].forEach(name => {
+  const fixture = readFixture(name);
+  const totals = fixtureGrowthTotals(fixture.payload);
+  const expected = fixture.expected;
+  check(`${name} fundamental growth`, closeTo(totals.fundamentalGrowth, expected.fundamentalGrowth), `${totals.fundamentalGrowth} !== ${expected.fundamentalGrowth}`);
+  check(`${name} fundamental coverage`, closeTo(totals.fundamentalCoverage, expected.fundamentalCoverage), `${totals.fundamentalCoverage} !== ${expected.fundamentalCoverage}`);
+  check(`${name} dividend growth`, closeTo(totals.dividendGrowth, expected.dividendGrowth), `${totals.dividendGrowth} !== ${expected.dividendGrowth}`);
+  check(`${name} dividend coverage`, closeTo(totals.dividendGrowthCoverage, expected.dividendGrowthCoverage), `${totals.dividendGrowthCoverage} !== ${expected.dividendGrowthCoverage}`);
+});
+
+const backup = readFixture("backup-v14.json");
+check("backup fixture is schema v14", backup.schemaVersion === 14);
+check("backup fixture stores growth kpis", backup.portfolioGrowthKpis && typeof backup.portfolioGrowthKpis === "object");
+check("backup fixture stores goals", Array.isArray(backup.goals));
+check("backup fixture stores allocation targets", backup.allocationTargets && typeof backup.allocationTargets === "object");
+check("backup fixture does not store sync secret", !JSON.stringify(backup).includes("portfolio_os_v4_sync_secret"));
+check("backup fixture does not store sync url", !JSON.stringify(backup).includes("portfolio_os_v4_sync_url"));
 
 if (failures.length) {
   console.error("Smoke test failed:");

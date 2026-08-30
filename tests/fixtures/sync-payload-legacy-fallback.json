@@ -1,0 +1,33 @@
+{
+  "description": "Legacy expected_growth still drives dividend growth when no direct Sheet dividend growth exists.",
+  "payload": {
+    "ok": true,
+    "positions": [
+      {
+        "name": "Legacy Income A",
+        "broker": "Manual",
+        "value": 1000,
+        "annual_div": 100,
+        "expected_growth": 4
+      },
+      {
+        "name": "Legacy Income B",
+        "broker": "Manual",
+        "value": 2000,
+        "annual_div": 300,
+        "expected_growth": 8
+      }
+    ],
+    "health": {
+      "error_count": 0,
+      "errors": []
+    },
+    "warnings": []
+  },
+  "expected": {
+    "fundamentalGrowth": null,
+    "fundamentalCoverage": 0,
+    "dividendGrowth": 7,
+    "dividendGrowthCoverage": 100
+  }
+}
