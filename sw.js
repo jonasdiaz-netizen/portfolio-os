@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v15-code-hardening`;
+const CACHE = `${CACHE_PREFIX}v16-render-maintenance`;
 const ASSETS = [
   "./index.html",
   "./manifest.webmanifest",

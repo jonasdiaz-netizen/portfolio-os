@@ -573,7 +573,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     <div class="card" style="margin-top:12px">
       <div class="split"><div><h2>Dividendenkalender</h2><div class="sub" id="calendarCoverage">Planung auf Basis der im privaten PortfolioMeta hinterlegten Ausschüttungsmonate.</div></div><span class="data-badge">Planungskalender</span></div>
       <div class="monthgrid" id="dividendMonthGrid"></div>
-      <div class="calendar-table"><div class="split"><h3 id="calendarTableTitle">Nächste geplante Ausschüttungen</h3><button class="btn secondary small" id="calendarReset" style="display:none">Alle nächsten</button></div><div class="tablebox" style="max-height:300px"><table><thead><tr><th>Monat</th><th>Position</th><th>Schätzung</th></tr></thead><tbody id="nextDividendBody"></tbody></table></div></div>
+      <div class="calendar-table"><div class="split"><h3 id="calendarTableTitle">Nächste geplante Ausschüttungen</h3><button class="btn secondary small" id="calendarReset" data-action="reset-calendar" style="display:none">Alle nächsten</button></div><div class="tablebox" style="max-height:300px"><table><thead><tr><th>Monat</th><th>Position</th><th>Schätzung</th></tr></thead><tbody id="nextDividendBody"></tbody></table></div></div>
     </div>
     <div class="card" style="margin-top:12px">
       <h2>Dividendenzahler</h2>
@@ -1275,7 +1275,7 @@ function renderCalendar(){
   }
   const cov=document.getElementById("calendarCoverage");if(cov)cov.textContent=`${pct(total?assigned/total*100:0,0)} der aktuellen Jahresdividende sind einem Ausschüttungsmonat zugeordnet${data.unassigned.length?` · ${data.unassigned.length} Position(en) noch ohne Monat`:""}. Beträge sind Schätzwerte aus Jahresdividende ÷ Ausschüttungsmonate. Klick auf einen Monat für Details.`;
   const body=document.getElementById("nextDividendBody"),title=document.getElementById("calendarTableTitle"),reset=document.getElementById("calendarReset");
-  if(reset){reset.style.display=selectedDividendMonth?"inline-block":"none";reset.onclick=()=>{selectedDividendMonth=null;renderCalendar()}}
+  if(reset)reset.style.display=selectedDividendMonth?"inline-block":"none";
   if(selectedDividendMonth){
     const rows=data.events.filter(e=>e.month===selectedDividendMonth).sort((a,b)=>b.amount-a.amount),sum=rows.reduce((a,e)=>a+e.amount,0);
     if(title)title.textContent=`Ausschüttungen im ${names[selectedDividendMonth-1]} · ${euro(sum,2)}`;
@@ -1344,10 +1344,18 @@ document.addEventListener("click",function(ev){
   if(actionTarget){
     const action=actionTarget.dataset.action;
     const encoded=actionTarget.dataset.value||"";
+    const index=Number(actionTarget.dataset.index);
     try{
       const value=decodeURIComponent(encoded);
       if(action==="open-asset-data")openAssetInData(value);
       if(action==="open-broker-data")openBrokerData(value);
+      if(action==="edit-goal"&&Number.isInteger(index))editGoal(index);
+      if(action==="delete-goal"&&Number.isInteger(index))deleteGoal(index);
+      if(action==="edit-position"&&Number.isInteger(index))editPos(index);
+      if(action==="delete-position"&&Number.isInteger(index))deletePos(index);
+      if(action==="edit-property"&&Number.isInteger(index))editProperty(index);
+      if(action==="delete-property"&&Number.isInteger(index))deleteProperty(index);
+      if(action==="reset-calendar"){selectedDividendMonth=null;renderCalendar();}
     }catch(err){
       console.error("Portfolio navigation failed",err);
     }
@@ -1508,7 +1516,7 @@ function renderGoalCard(g,index){
   return `<div class="goal-card card">
     <div class="split">
       <div><div class="property-title">${esc(g.name||goalTypeLabel(g.type))}</div><div class="detail-meta"><span class="goaltype">${esc(goalTypeLabel(g.type))}</span>${g.real_terms&&!isDividend?'<span class="goaltype">heutige Kaufkraft</span>':''}</div></div>
-      <div class="goal-actions"><button class="btn small secondary" onclick="editGoal(${index})">Edit</button><button class="btn small danger" onclick="deleteGoal(${index})">Delete</button></div>
+      <div class="goal-actions"><button class="btn small secondary" data-action="edit-goal" data-index="${index}">Edit</button><button class="btn small danger" data-action="delete-goal" data-index="${index}">Delete</button></div>
     </div>
     ${goalProgressHtml(progress)}
     <div class="split"><strong>${euro(current)} / ${euro(target)}</strong><strong>${pct(progress,1)}</strong></div>
@@ -1594,6 +1602,7 @@ function goalFromForm(){
 }
 function saveGoal(){const g=goalFromForm();if(g.target<=0){alert("Bitte einen Zielwert größer 0 eingeben.");return}if(goalEditIndex===null)goals.push(g);else goals[goalEditIndex]=g;persist();clearGoalForm();renderGoals()}
 function editGoal(i){
+  if(!Number.isInteger(i)||!goals[i])return;
   goalEditIndex=i;
   const g=goals[i];
   setGoalEditorVisible("Ziel bearbeiten");
@@ -1601,7 +1610,7 @@ function editGoal(i){
   toggleGoalFields();
   scrollGoalEditorIntoView();
 }
-function deleteGoal(i){if(!confirm(`Ziel „${goals[i]?.name||""}“ löschen?`))return;goals.splice(i,1);persist();renderGoals()}
+function deleteGoal(i){if(!Number.isInteger(i)||!goals[i])return;if(!confirm(`Ziel „${goals[i]?.name||""}“ löschen?`))return;goals.splice(i,1);persist();renderGoals()}
 
 function allocationBucketData(dimension){
   if(dimension==="position")return {entries:aggregate().filter(row=>row.value>0).map(row=>[row.name,row.value]),total:totals().investedValue};
@@ -1610,13 +1619,10 @@ function allocationBucketData(dimension){
   return {entries:analysisBucket(rows,dimension),total:rows.reduce((sum,row)=>sum+row.value,0)};
 }
 function allocTargetMap(){if(!allocationTargets[allocationDimension])allocationTargets[allocationDimension]={};return allocationTargets[allocationDimension]}
-function renderAllocation(){
-  const body=document.getElementById("allocationBody");
-  if(!body)return;
-
-  const data=allocationBucketData(allocationDimension),targetMap=allocTargetMap();
+function allocationModel(){
+  const data=allocationBucketData(allocationDimension),targetMap=allocTargetMap(),values=new Map(data.entries);
   const names=[...new Set([...data.entries.map(row=>row[0]),...Object.keys(targetMap)])];
-  const values=new Map(data.entries),investment=Math.max(0,+document.getElementById("allocInvestment")?.value||0);
+  const investment=Math.max(0,+document.getElementById("allocInvestment")?.value||0);
   const targetSum=names.reduce((sum,name)=>sum+(+targetMap[name]||0),0),afterTotal=data.total+investment;
   const gaps=names.map(name=>{
     const current=values.get(name)||0,target=+targetMap[name]||0;
@@ -1624,24 +1630,38 @@ function renderAllocation(){
   });
   const gapTotal=gaps.reduce((sum,row)=>sum+row[1],0);
   const suggestions=new Map(gaps.map(([name,gap])=>[name,gapTotal>0?investment*gap/gapTotal:0]));
-
-  document.getElementById("allocTargetSum").textContent=pct(targetSum,1);
-  const hint=document.getElementById("allocHint"),targetIsComplete=Math.abs(targetSum-100)<.05;
-  if(hint){
-    hint.textContent=targetIsComplete?"Zielsumme passt: 100 %. Vorschlag verteilt nur auf Untergewichte.":`Zielsumme ist ${pct(targetSum,1)} – für vollständiges Rebalancing bitte auf 100 % bringen.`;
-    hint.className="sub "+(targetIsComplete?"good":"warn");
-  }
-
-  body.innerHTML=names.sort((a,b)=>(values.get(b)||0)-(values.get(a)||0)).map(name=>{
+  const rows=names.sort((a,b)=>(values.get(b)||0)-(values.get(a)||0)).map(name=>{
     const current=values.get(name)||0,currentPercent=data.total?current/data.total*100:0,target=+targetMap[name]||0;
     const difference=target-currentPercent,addition=suggestions.get(name)||0,afterPercent=afterTotal?(current+addition)/afterTotal*100:0;
-    const differenceClass=difference>.05?"alloc-positive":difference<-.05?"alloc-negative":"alloc-neutral";
-    return `<tr><td><b>${esc(name)}</b></td><td>${euro(current)}</td><td>${pct(currentPercent,1)}</td><td><input class="allocation-target" type="number" min="0" max="100" step=".1" value="${Number(target.toFixed(1))}" data-name="${esc(name)}"></td><td class="${differenceClass}">${difference>=0?"+":""}${pct(difference,1)}</td><td>${addition>0?`<b class="good">${euro(addition)}</b>`:euro(0)}</td><td>${pct(afterPercent,1)}</td></tr>`;
-  }).join("");
+    return {name,current,currentPercent,target,difference,addition,afterPercent};
+  });
+  return {rows,targetMap,targetSum,targetIsComplete:Math.abs(targetSum-100)<.05};
+}
+function renderAllocationSummary(model){
+  setText("allocTargetSum",pct(model.targetSum,1));
+  const hint=document.getElementById("allocHint"),targetIsComplete=model.targetIsComplete;
+  if(hint){
+    hint.textContent=targetIsComplete?"Zielsumme passt: 100 %. Vorschlag verteilt nur auf Untergewichte.":`Zielsumme ist ${pct(model.targetSum,1)} – für vollständiges Rebalancing bitte auf 100 % bringen.`;
+    hint.className="sub "+(targetIsComplete?"good":"warn");
+  }
+}
+function allocationRowHtml(row){
+  const differenceClass=row.difference>.05?"alloc-positive":row.difference<-.05?"alloc-negative":"alloc-neutral";
+  return `<tr><td><b>${esc(row.name)}</b></td><td>${euro(row.current)}</td><td>${pct(row.currentPercent,1)}</td><td><input class="allocation-target" type="number" min="0" max="100" step=".1" value="${Number(row.target.toFixed(1))}" data-name="${esc(row.name)}"></td><td class="${differenceClass}">${row.difference>=0?"+":""}${pct(row.difference,1)}</td><td>${row.addition>0?`<b class="good">${euro(row.addition)}</b>`:euro(0)}</td><td>${pct(row.afterPercent,1)}</td></tr>`;
+}
+function bindAllocationTargetInputs(body,targetMap){
   body.querySelectorAll(".allocation-target").forEach(input=>input.addEventListener("change",()=>{
     targetMap[input.dataset.name]=Math.max(0,Math.min(100,+input.value||0));
     persist();renderAllocation();
   }));
+}
+function renderAllocation(){
+  const body=document.getElementById("allocationBody");
+  if(!body)return;
+  const model=allocationModel();
+  renderAllocationSummary(model);
+  body.innerHTML=model.rows.map(allocationRowHtml).join("");
+  bindAllocationTargetInputs(body,model.targetMap);
 }
 function setCurrentAllocationAsTarget(){const data=allocationBucketData(allocationDimension),m={};for(const [n,v] of data.entries)m[n]=data.total?v/data.total*100:0;allocationTargets[allocationDimension]=m;persist();renderAllocation()}
 function clearAllocationTargets(){if(!confirm("Zielallokation für diese Ebene löschen?"))return;allocationTargets[allocationDimension]={};persist();renderAllocation()}
@@ -1737,8 +1757,8 @@ function positionMatchesQuery(p,q){
 }
 function dataRowActions(p,i){
   return p.source==="sheet"
-    ? `<button class="btn small secondary" onclick="editPos(${i})">Growth</button>`
-    : `<button class="btn small secondary" onclick="editPos(${i})">Edit</button> <button class="btn small danger" onclick="deletePos(${i})">Delete</button>`;
+    ? `<button class="btn small secondary" data-action="edit-position" data-index="${i}">Growth</button>`
+    : `<button class="btn small secondary" data-action="edit-position" data-index="${i}">Edit</button> <button class="btn small danger" data-action="delete-position" data-index="${i}">Delete</button>`;
 }
 function dataPositionCell(p){
   return `<b>${esc(p.name)}</b>${p.sync_warning?`<div class="sub warn">⚠ ${esc(p.sync_warning)}</div>`:""}${p.note?`<div class="sub">${esc(p.note)}</div>`:""}`;
@@ -1756,40 +1776,53 @@ function renderData(){
   const rows=positions.map((p,i)=>({p,i})).filter(({p})=>positionMatchesQuery(p,q));
   setHtml("dataBody",rows.map(dataPositionRow).join(""));
 }
+function renderRealEstateTotals(rt){
+  setText("reValue",euro(rt.value));
+  setText("reDebt",euro(rt.debt));
+  setText("reEquity",euro(rt.equity));
+  setText("reCashflow",euro(rt.cash));
+}
+function propertyCardHeaderHtml(p,i){
+  return `<div class="property-head"><div><div class="property-title">${esc(p.name)}</div><div class="property-location">${esc(p.location||"")}</div></div>
+    <div><button class="btn small secondary" data-action="edit-property" data-index="${i}">Edit</button> <button class="btn small danger" data-action="delete-property" data-index="${i}">Delete</button></div></div>`;
+}
+function propertyKpiRowHtml(p,pr,cf){
+  return `<div class="kpirow">
+    <div class="mini"><div class="label">Wert aktuell</div><strong>${euro(p.current_value)}</strong></div>
+    <div class="mini"><div class="label">Restschuld</div><strong>${euro(p.remaining_debt)}</strong></div>
+    <div class="mini"><div class="label">Kaltmiete / Monat</div><strong>${euro(p.monthly_rent)}</strong></div>
+    <div class="mini"><div class="label">Kreditrate / Monat</div><strong>${euro(pr.payment)}</strong></div>
+    <div class="mini"><div class="label">Cashflow / Monat</div><strong class="${cf>=0?"good":"bad"}">${euro(cf)}</strong></div>
+  </div>`;
+}
+function propertyProjectionHtml(p,pr,targetValue,targetEquity){
+  const targetDate=new Date((p.target_date||"2033-12-31")+"T00:00:00").toLocaleDateString("de-DE");
+  return `<div class="projection">
+    <div class="projectionbox">
+      <div class="label">Restschuld zum ${targetDate}</div>
+      <div class="forecastline">${euro(pr.balance)}</div>
+      <div class="sub">Bis dahin getilgt: ${euro(pr.totalPrincipal)} · Zinsen im Projektionszeitraum: ${euro(pr.totalInterest)} · Tilgung nächste 12M: ${euro(pr.first12Principal)}</div>
+    </div>
+    <div class="projectionbox">
+      <div class="label">Projiziertes Eigenkapital am Zielstichtag</div>
+      <div class="forecastline">${euro(targetEquity)}</div>
+      <div class="sub">Immobilienwert bei ${pct(p.value_growth,1)} Wertsteigerung p.a.: ${euro(targetValue)}</div>
+    </div>
+  </div>`;
+}
+function propertyCardHtml(p,i){
+  const pr=loanProjection(p),targetValue=propertyValueAtTarget(p),cf=propertyCashflow(p,pr),targetEquity=targetValue-pr.balance;
+  return `<div class="card property-card">
+    ${propertyCardHeaderHtml(p,i)}
+    ${propertyKpiRowHtml(p,pr,cf)}
+    ${propertyProjectionHtml(p,pr,targetValue,targetEquity)}
+    ${p.note?`<div class="sub" style="margin-top:10px">${esc(p.note)}</div>`:""}
+  </div>`;
+}
 function renderRealEstate(){
   const rt=propertyTotals();
-  document.getElementById("reValue").textContent=euro(rt.value);
-  document.getElementById("reDebt").textContent=euro(rt.debt);
-  document.getElementById("reEquity").textContent=euro(rt.equity);
-  document.getElementById("reCashflow").textContent=euro(rt.cash);
-
-  document.getElementById("propertyCards").innerHTML=properties.map((p,i)=>{
-    const pr=loanProjection(p),targetValue=propertyValueAtTarget(p),cf=propertyCashflow(p,pr),targetEquity=targetValue-pr.balance;
-    return `<div class="card property-card">
-      <div class="property-head"><div><div class="property-title">${esc(p.name)}</div><div class="property-location">${esc(p.location||"")}</div></div>
-      <div><button class="btn small secondary" onclick="editProperty(${i})">Edit</button> <button class="btn small danger" onclick="deleteProperty(${i})">Delete</button></div></div>
-      <div class="kpirow">
-        <div class="mini"><div class="label">Wert aktuell</div><strong>${euro(p.current_value)}</strong></div>
-        <div class="mini"><div class="label">Restschuld</div><strong>${euro(p.remaining_debt)}</strong></div>
-        <div class="mini"><div class="label">Kaltmiete / Monat</div><strong>${euro(p.monthly_rent)}</strong></div>
-        <div class="mini"><div class="label">Kreditrate / Monat</div><strong>${euro(pr.payment)}</strong></div>
-        <div class="mini"><div class="label">Cashflow / Monat</div><strong class="${cf>=0?"good":"bad"}">${euro(cf)}</strong></div>
-      </div>
-      <div class="projection">
-        <div class="projectionbox">
-          <div class="label">Restschuld zum ${new Date((p.target_date||"2033-12-31")+"T00:00:00").toLocaleDateString("de-DE")}</div>
-          <div class="forecastline">${euro(pr.balance)}</div>
-          <div class="sub">Bis dahin getilgt: ${euro(pr.totalPrincipal)} · Zinsen im Projektionszeitraum: ${euro(pr.totalInterest)} · Tilgung nächste 12M: ${euro(pr.first12Principal)}</div>
-        </div>
-        <div class="projectionbox">
-          <div class="label">Projiziertes Eigenkapital am Zielstichtag</div>
-          <div class="forecastline">${euro(targetEquity)}</div>
-          <div class="sub">Immobilienwert bei ${pct(p.value_growth,1)} Wertsteigerung p.a.: ${euro(targetValue)}</div>
-        </div>
-      </div>
-      ${p.note?`<div class="sub" style="margin-top:10px">${esc(p.note)}</div>`:""}
-    </div>`;
-  }).join("");
+  renderRealEstateTotals(rt);
+  setHtml("propertyCards",properties.map(propertyCardHtml).join(""));
 }
 
 
@@ -1824,6 +1857,7 @@ function clearPropertyForm(){
   document.getElementById("rNote").value="";
 }
 function editProperty(i){
+  if(!Number.isInteger(i)||!properties[i])return;
   reEditIndex=i;
   const p=properties[i];
   document.getElementById("rName").value=p.name||"";
@@ -1844,6 +1878,7 @@ function editProperty(i){
   window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
 }
 function deleteProperty(i){
+  if(!Number.isInteger(i)||!properties[i])return;
   if(!confirm(`"${properties[i].name}" wirklich löschen?`)) return;
   properties.splice(i,1);
   persist();
@@ -1989,6 +2024,7 @@ function clearForm(){
   ["eName","eBroker","eShares","eValue","eDiv","eMonthly","ePrice"].forEach(id=>document.getElementById(id).disabled=false);
 }
 function editPos(i){
+  if(!Number.isInteger(i)||!positions[i])return;
   editIndex=i;const p=positions[i];
   document.getElementById("editorTitle").textContent=p.source==="sheet"?"Sheet-Position: lokale Annahme bearbeiten":"Position bearbeiten";
   document.getElementById("eName").value=p.name||"";document.getElementById("eBroker").value=p.broker||"";
@@ -1999,6 +2035,7 @@ function editPos(i){
   switchView("data");window.scrollTo({top:130,behavior:"smooth"});
 }
 function deletePos(i){
+  if(!Number.isInteger(i)||!positions[i])return;
   if(positions[i]?.source==="sheet"){alert("Diese Position kommt aus Google Sheets. Lösche sie dort; beim nächsten Sync verschwindet sie hier.");return}
   if(!confirm(`"${positions[i].name}" wirklich löschen?`))return;
   positions.splice(i,1);persist();render();

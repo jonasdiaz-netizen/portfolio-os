@@ -203,8 +203,23 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "goalAssumptionsText",
   "goalScenarioGridHtml",
   "fillGoalForm",
-  "defaultGoalDraft"
+  "defaultGoalDraft",
+  "renderRealEstateTotals",
+  "propertyCardHtml",
+  "allocationModel",
+  "allocationRowHtml",
+  "bindAllocationTargetInputs"
 ].forEach(symbol => check(`${symbol} exists`, html.includes(symbol)));
+
+check("no inline onclick attributes", !/\sonclick=/.test(html));
+check("edit/delete buttons use data actions", includesAll(html, [
+  'data-action="edit-goal"',
+  'data-action="delete-goal"',
+  'data-action="edit-position"',
+  'data-action="delete-position"',
+  'data-action="edit-property"',
+  'data-action="delete-property"'
+]));
 
 check(
   "position growth aliases are mapped",
@@ -238,7 +253,7 @@ try {
   failures.push(`sw.js parses: ${error.message}`);
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("service worker cache version bumped", sw.includes("v15-code-hardening"));
+check("service worker cache version bumped", sw.includes("v16-render-maintenance"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
