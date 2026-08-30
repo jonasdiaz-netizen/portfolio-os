@@ -45,7 +45,6 @@ const sheetPositionFields = {
   ],
   growthMetric: ["growth_metric","Growth Metric"],
   assetClass: ["asset_class","assetklasse","Assetklasse","Asset Class"],
-  assetType: ["asset_type","asset_type_name","Asset Type","Typ"],
   sourceSheet: ["source_sheet","source_tab","sheet","Sheet","Tab"]
 };
 
@@ -101,9 +100,8 @@ function mapFixturePosition(position, source = "manual") {
   const dividendGrowth = parseMaybePct(prop(position, sheetPositionFields.dividendGrowth), false);
   const fcfGrowth = parseMaybePct(prop(position, sheetPositionFields.fcfGrowth), false);
   const assetClass = prop(position, sheetPositionFields.assetClass) || "";
-  const assetType = prop(position, sheetPositionFields.assetType) || "";
   const sourceSheet = prop(position, sheetPositionFields.sourceSheet) || "";
-  const isCrypto = /\b(krypto|crypto)\b/i.test([assetClass, assetType, sourceSheet, position.broker].filter(Boolean).join(" "));
+  const isCrypto = /\b(krypto|crypto)\b/i.test([assetClass, sourceSheet, position.broker].filter(Boolean).join(" "));
   const expectedGrowth = dividendGrowth ?? parseMaybePct(position.expected_growth, false) ?? parseMaybePct(position.growth, false) ?? (isCrypto ? 0 : defaultExpectedGrowth(position.name));
   return {
     ...position,
@@ -111,7 +109,6 @@ function mapFixturePosition(position, source = "manual") {
     source_key: position.source_key || "",
     growth_metric: prop(position, sheetPositionFields.growthMetric) || position.growth_metric || "",
     asset_class: assetClass || position.asset_class || "",
-    asset_type: assetType || position.asset_type || "",
     source_sheet: sourceSheet || position.source_sheet || "",
     fundamental_growth: fundamentalGrowth,
     expected_dividend_growth: dividendGrowth,
@@ -144,24 +141,6 @@ function extractFixtureGrowthKpis(data) {
   return null;
 }
 
-function cryptoFixturePositions(data) {
-  const groups = [data?.crypto_positions, data?.crypto, data?.krypto].filter(Array.isArray);
-  return groups.flat().map(position => ({
-    ...position,
-    name: position.name || position.Name || position.asset || position.Asset || position.coin || position.Coin || position.token || position.Token || position.ticker || position.Ticker || position.symbol || position.Symbol,
-    broker: position.broker || position.wallet || position.Wallet || position.platform || "Krypto",
-    annual_div: position.annual_div ?? position.annualDividend ?? 0,
-    expected_growth: position.expected_growth ?? 0,
-    asset_class: prop(position, sheetPositionFields.assetClass) || "Krypto",
-    asset_type: prop(position, sheetPositionFields.assetType) || "Krypto",
-    source_sheet: prop(position, sheetPositionFields.sourceSheet) || "Krypto"
-  }));
-}
-
-function syncFixturePositions(data) {
-  return [...(data?.positions || []), ...cryptoFixturePositions(data)];
-}
-
 function weightedGrowth(positions, valueField, weightField) {
   let weighted = 0;
   let eligibleWeight = 0;
@@ -182,7 +161,7 @@ function weightedGrowth(positions, valueField, weightField) {
 }
 
 function fixtureGrowthTotals(payload) {
-  const positions = syncFixturePositions(payload).map(position => mapFixturePosition({ ...position, source: "sheet" }, "sheet"));
+  const positions = (payload.positions || []).map(position => mapFixturePosition({ ...position, source: "sheet" }, "sheet"));
   const portfolioGrowthKpis = extractFixtureGrowthKpis(payload);
   const fromPositionsFundamental = weightedGrowth(positions, "fundamental_growth", "value");
   const fromPositionsDividend = weightedGrowth(positions, "expected_dividend_growth", "annual_div");
@@ -222,11 +201,7 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "mapSyncPayload",
   "normalizeGrowthKpis",
   "extractPortfolioGrowthKpis",
-  "cryptoPayloadPositions",
-  "syncPayloadPositions",
   "positionClassification",
-  "isCryptoPosition",
-  "cryptoTotals",
   "renderDashboardOverview",
   "renderDashboardInvestment",
   "renderGrowthKpis",
@@ -271,8 +246,7 @@ check(
   includesAll(html, [
     "asset_class",
     "source_sheet",
-    "cryptoPayloadPositions",
-    "mCryptoExposure"
+    "positionClassification"
   ])
 );
 
@@ -320,14 +294,14 @@ check("service worker deletes only own caches", sw.includes("key.startsWith(CACH
 });
 
 const cryptoFixture = fixtureGrowthTotals({
-  krypto: [
-    { name: "Bitcoin", broker: "Wallet", value: 2500 },
-    { name: "Ethereum", value: 1500, source_sheet: "Crypto" }
+  positions: [
+    { name: "Bitcoin", broker: "Krypto", value: 2500, asset_class: "Krypto", source_sheet: "Krypto" },
+    { name: "Ethereum", broker: "Wallet", value: 1500, asset_class: "Krypto", source_sheet: "Crypto" }
   ]
 });
-check("crypto payload positions merge into sync positions", cryptoFixture.positions.length === 2);
-check("crypto payload defaults to zero dividend growth fallback", cryptoFixture.positions.every(position => position.expected_growth === 0));
-check("crypto payload keeps asset class", cryptoFixture.positions.every(position => position.asset_class === "Krypto"));
+check("crypto sheet positions stay in positions", cryptoFixture.positions.length === 2);
+check("crypto sheet positions default to zero dividend growth", cryptoFixture.positions.every(position => position.expected_growth === 0));
+check("crypto sheet positions keep asset class", cryptoFixture.positions.every(position => position.asset_class === "Krypto"));
 
 if (appsScript) {
   check("Apps Script includes optional Krypto tab", appsScript.includes('"Krypto"') && appsScript.includes('"Crypto"'));

@@ -484,7 +484,6 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
         <div class="pulse-divider"></div>
         <div class="split"><span class="label">Größte Position</span><strong id="mLargestPosition">–</strong></div>
         <div class="split"><span class="label">Top-10-Konzentration</span><strong id="mTop10Concentration">–</strong></div>
-        <div class="split"><span class="label">Krypto</span><strong id="mCryptoExposure">–</strong></div>
         <div class="split"><span class="label">Growth-Daten</span><strong id="mGrowthStatus">–</strong></div>
         <div class="sub">Immobilienwerte und Mieten werden bewusst nicht in diese Portfolio-KPIs eingerechnet.</div>
       </div>
@@ -824,7 +823,6 @@ const SHEET_POSITION_FIELDS = {
   ],
   growthMetric: ["growth_metric","Growth Metric"],
   assetClass: ["asset_class","assetklasse","Assetklasse","Asset Class"],
-  assetType: ["asset_type","asset_type_name","Asset Type","Typ"],
   sourceSheet: ["source_sheet","source_tab","sheet","Sheet","Tab"]
 };
 const SHEET_PORTFOLIO_KPI_FIELDS = {
@@ -870,16 +868,14 @@ function mapSheetPosition(p,source="manual"){
   const dividendGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.dividendGrowth),false);
   const fcfGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fcfGrowth),false);
   const assetClass=prop(p,SHEET_POSITION_FIELDS.assetClass) || "";
-  const assetType=prop(p,SHEET_POSITION_FIELDS.assetType) || "";
   const sourceSheet=prop(p,SHEET_POSITION_FIELDS.sourceSheet) || "";
-  const isCrypto=/\b(krypto|crypto)\b/i.test([assetClass,assetType,sourceSheet,p.broker].filter(Boolean).join(" "));
+  const isCrypto=/\b(krypto|crypto)\b/i.test([assetClass,sourceSheet,p.broker].filter(Boolean).join(" "));
   const expectedGrowth=dividendGrowth ?? parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false) ?? (isCrypto?0:defaultExpectedGrowth(p.name));
   return {...p,
     source: p.source || source,
     source_key: p.source_key || "",
     growth_metric: prop(p,SHEET_POSITION_FIELDS.growthMetric) || p.growth_metric || "",
     asset_class: assetClass || p.asset_class || "",
-    asset_type: assetType || p.asset_type || "",
     source_sheet: sourceSheet || p.source_sheet || "",
     fundamental_growth: fundamentalGrowth,
     expected_dividend_growth: dividendGrowth,
@@ -999,25 +995,9 @@ function extractPortfolioGrowthKpis(data){
   }
   return null;
 }
-function cryptoPayloadPositions(data){
-  const groups=[data?.crypto_positions,data?.crypto,data?.krypto].filter(Array.isArray);
-  return groups.flat().map(p=>({
-    ...p,
-    name:p.name||p.Name||p.asset||p.Asset||p.coin||p.Coin||p.token||p.Token||p.ticker||p.Ticker||p.symbol||p.Symbol,
-    broker:p.broker||p.wallet||p.Wallet||p.platform||"Krypto",
-    annual_div:p.annual_div??p.annualDividend??0,
-    expected_growth:p.expected_growth??0,
-    asset_class:prop(p,SHEET_POSITION_FIELDS.assetClass)||"Krypto",
-    asset_type:prop(p,SHEET_POSITION_FIELDS.assetType)||"Krypto",
-    source_sheet:prop(p,SHEET_POSITION_FIELDS.sourceSheet)||"Krypto"
-  }));
-}
-function syncPayloadPositions(data){
-  return [...(data?.positions||[]),...cryptoPayloadPositions(data)];
-}
 function mapSyncPayload(data){
   const growthKpis=extractPortfolioGrowthKpis(data);
-  const incoming=syncPayloadPositions(data).map(p=>mapSheetPosition({...p,source:"sheet"},"sheet"));
+  const incoming=(data?.positions||[]).map(p=>mapSheetPosition({...p,source:"sheet"},"sheet"));
   return {
     cashTotal:Number.isFinite(Number(data?.cash_total))?Number(data.cash_total):null,
     meta:Array.isArray(data?.meta)?data.meta:null,
@@ -1280,18 +1260,8 @@ function positionClassification(p){
     ...meta,
     sector:p?.sector||meta.sector||"",
     region:p?.region||p?.country||meta.region||"",
-    asset_class:p?.asset_class||meta.asset_class||"",
-    asset_type:p?.asset_type||meta.asset_type||""
+    asset_class:p?.asset_class||meta.asset_class||""
   };
-}
-function isCryptoPosition(p){
-  const meta=positionClassification(p);
-  return /\b(krypto|crypto)\b/i.test([p?.asset_class,p?.asset_type,p?.source_sheet,p?.broker,meta.asset_class,meta.asset_type].filter(Boolean).join(" "));
-}
-function cryptoTotals(){
-  const value=positions.filter(isCryptoPosition).reduce((sum,p)=>sum+(+p.value||0),0);
-  const invested=positions.reduce((sum,p)=>sum+(+p.value||0),0);
-  return {value,share:invested?value/invested*100:0};
 }
 function analysisRows(){
   const rows=positions.map(p=>{const meta=positionClassification(p);return {name:p.name,value:+p.value||0,sector:meta.sector||"Nicht zugeordnet",region:meta.region||"Nicht zugeordnet",asset_class:meta.asset_class||"Nicht zugeordnet",covered:Boolean(meta.sector&&meta.region&&meta.asset_class)}});
@@ -1768,8 +1738,6 @@ function renderDashboardInvestment(t,agg){
   setText("mIncomeGrowth",pct(cagr,1));
   setText("mLargestPosition",largest?`${largest.name} · ${pct(t.investedValue?largest.value/t.investedValue*100:0,1)}`:"–");
   setText("mTop10Concentration",pct(t.investedValue?top10/t.investedValue*100:0,1));
-  const crypto=cryptoTotals();
-  setText("mCryptoExposure",crypto.value?`${euro(crypto.value)} · ${pct(crypto.share,1)}`:"–");
   setText("mGrowthStatus",`Fund. ${pctMaybe(t.fundamentalCoverage,0)} · Div. ${pctMaybe(t.dividendGrowthCoverage,0)}`);
 }
 function renderBrokerBars(){
