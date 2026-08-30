@@ -202,6 +202,8 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "normalizeGrowthKpis",
   "extractPortfolioGrowthKpis",
   "positionClassification",
+  "isCryptoPosition",
+  "cryptoPortfolioValue",
   "renderDashboardOverview",
   "renderDashboardInvestment",
   "renderGrowthKpis",
@@ -246,7 +248,10 @@ check(
   includesAll(html, [
     "asset_class",
     "source_sheet",
-    "positionClassification"
+    "positionClassification",
+    "mCryptoAssets",
+    "mCryptoShare",
+    "mix-crypto"
   ])
 );
 
@@ -279,7 +284,7 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("service worker cache version bumped", sw.includes("v17-crypto-dashboard"));
+check("service worker cache version bumped", sw.includes("v18-crypto-allocation"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
