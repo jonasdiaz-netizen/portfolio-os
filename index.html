@@ -1483,27 +1483,36 @@ function goalScenarioMonths(g,isDividend){
     high:findWealthGoalMonths(g,finiteOr(g.return_high,8))
   };
 }
+function goalAssumptionsText(g,isDividend){
+  return isDividend
+    ? ` · Div.-Growth ${pct(g.div_growth,1)} · Reinvest ${g.reinvest===false?"Nein":"Ja"}`
+    : ` · Rendite ${pct(g.return_low,1)} / ${pct(g.return_base,1)} / ${pct(g.return_high,1)}${g.real_terms?` · Inflation ${pct(g.inflation,1)}`:""}`;
+}
+function goalProgressHtml(progress){
+  return `<div class="progress"><span style="width:${progress}%"></span></div>`;
+}
+function goalScenarioGridHtml(scenario,current,target){
+  return `<div class="goal-grid">
+    <div class="mini"><div class="label">Fehlt noch</div><strong>${euro(Math.max(0,target-current))}</strong></div>
+    <div class="mini"><div class="label">Konservativ</div><div class="goal-eta">${etaFromMonths(scenario.low)}</div></div>
+    <div class="mini"><div class="label">Basis</div><div class="goal-eta">${etaFromMonths(scenario.base)}</div></div>
+    <div class="mini"><div class="label">Optimistisch</div><div class="goal-eta">${etaFromMonths(scenario.high)}</div></div>
+  </div>`;
+}
 function renderGoalCard(g,index){
   const current=goalCurrentValue(g),target=+g.target||0;
   const progress=target?Math.min(100,current/target*100):0;
   const isDividend=goalIsDividend(g),scenario=goalScenarioMonths(g,isDividend);
   const targetDate=g.target_date?new Date(g.target_date+"T00:00:00").toLocaleDateString("de-DE"):"kein fixes Datum";
-  const assumptions=isDividend
-    ? ` · Div.-Growth ${pct(g.div_growth,1)} · Reinvest ${g.reinvest===false?"Nein":"Ja"}`
-    : ` · Rendite ${pct(g.return_low,1)} / ${pct(g.return_base,1)} / ${pct(g.return_high,1)}${g.real_terms?` · Inflation ${pct(g.inflation,1)}`:""}`;
+  const assumptions=goalAssumptionsText(g,isDividend);
   return `<div class="goal-card card">
     <div class="split">
       <div><div class="property-title">${esc(g.name||goalTypeLabel(g.type))}</div><div class="detail-meta"><span class="goaltype">${esc(goalTypeLabel(g.type))}</span>${g.real_terms&&!isDividend?'<span class="goaltype">heutige Kaufkraft</span>':''}</div></div>
       <div class="goal-actions"><button class="btn small secondary" onclick="editGoal(${index})">Edit</button><button class="btn small danger" onclick="deleteGoal(${index})">Delete</button></div>
     </div>
-    <div class="progress"><span style="width:${progress}%"></span></div>
+    ${goalProgressHtml(progress)}
     <div class="split"><strong>${euro(current)} / ${euro(target)}</strong><strong>${pct(progress,1)}</strong></div>
-    <div class="goal-grid">
-      <div class="mini"><div class="label">Fehlt noch</div><strong>${euro(Math.max(0,target-current))}</strong></div>
-      <div class="mini"><div class="label">Konservativ</div><div class="goal-eta">${etaFromMonths(scenario.low)}</div></div>
-      <div class="mini"><div class="label">Basis</div><div class="goal-eta">${etaFromMonths(scenario.base)}</div></div>
-      <div class="mini"><div class="label">Optimistisch</div><div class="goal-eta">${etaFromMonths(scenario.high)}</div></div>
-    </div>
+    ${goalScenarioGridHtml(scenario,current,target)}
     <div class="sub">Zieldatum: ${targetDate} · Einzahlung ${euro(g.monthly_contribution||0)}/Monat${assumptions}${g.note?` · ${esc(g.note)}`:""}</div>
   </div>`;
 }
@@ -1518,49 +1527,79 @@ function renderGoals(){
 }
 function toggleGoalFields(){const div=["annual_dividend","monthly_dividend"].includes(document.getElementById("gType")?.value);document.querySelectorAll(".wealth-only").forEach(x=>x.style.display=div?"none":"block");document.querySelectorAll(".dividend-only").forEach(x=>x.style.display=div?"block":"none")}
 function clearGoalForm(){goalEditIndex=null;document.getElementById("goalEditorCard").style.display="none";document.getElementById("goalEditorTitle").textContent="Ziel hinzufügen"}
-function newGoal(){
-  goalEditIndex=null;
-  const t=totals();
-  document.getElementById("goalEditorCard").style.display="block";
-  document.getElementById("goalEditorTitle").textContent="Ziel hinzufügen";
-  document.getElementById("gName").value="";
-  document.getElementById("gType").value="financial_assets";
-  document.getElementById("gTarget").value=500000;
-  document.getElementById("gDate").value="";
-  document.getElementById("gMonthly").value=Math.round(t.monthly||0);
-  document.getElementById("gReturnLow").value=4;
-  document.getElementById("gReturnBase").value=6;
-  document.getElementById("gReturnHigh").value=8;
-  document.getElementById("gInflation").value=2;
-  document.getElementById("gDivGrowth").value=finiteOr(t.expGrowth,5).toFixed(1);
-  document.getElementById("gReinvest").value="1";
-  document.getElementById("gRealTerms").checked=false;
-  document.getElementById("gNote").value="";
-  toggleGoalFields();
-  setTimeout(()=>document.getElementById("goalEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+function setGoalEditorVisible(title){
+  setDisplay("goalEditorCard",true);
+  setText("goalEditorTitle",title);
 }
-function goalFromForm(){return {name:document.getElementById("gName").value.trim()||goalTypeLabel(document.getElementById("gType").value),type:document.getElementById("gType").value,target:+document.getElementById("gTarget").value||0,target_date:document.getElementById("gDate").value||"",monthly_contribution:+document.getElementById("gMonthly").value||0,return_low:+document.getElementById("gReturnLow").value||0,return_base:+document.getElementById("gReturnBase").value||0,return_high:+document.getElementById("gReturnHigh").value||0,inflation:+document.getElementById("gInflation").value||0,real_terms:document.getElementById("gRealTerms").checked,div_growth:+document.getElementById("gDivGrowth").value||0,reinvest:document.getElementById("gReinvest").value==="1",note:document.getElementById("gNote").value.trim()}}
-function saveGoal(){const g=goalFromForm();if(g.target<=0){alert("Bitte einen Zielwert größer 0 eingeben.");return}if(goalEditIndex===null)goals.push(g);else goals[goalEditIndex]=g;persist();clearGoalForm();renderGoals()}
-function editGoal(i){
-  goalEditIndex=i;
-  const g=goals[i];
-  document.getElementById("goalEditorCard").style.display="block";
-  document.getElementById("goalEditorTitle").textContent="Ziel bearbeiten";
+function fillGoalForm(g){
   document.getElementById("gName").value=g.name||"";
   document.getElementById("gType").value=g.type||"financial_assets";
-  document.getElementById("gTarget").value=g.target||0;
+  document.getElementById("gTarget").value=g.target??0;
   document.getElementById("gDate").value=g.target_date||"";
-  document.getElementById("gMonthly").value=g.monthly_contribution||0;
+  document.getElementById("gMonthly").value=g.monthly_contribution??0;
   document.getElementById("gReturnLow").value=g.return_low??4;
   document.getElementById("gReturnBase").value=g.return_base??6;
   document.getElementById("gReturnHigh").value=g.return_high??8;
   document.getElementById("gInflation").value=g.inflation??2;
-  document.getElementById("gRealTerms").checked=!!g.real_terms;
   document.getElementById("gDivGrowth").value=g.div_growth??finiteOr(totals().expGrowth,5);
   document.getElementById("gReinvest").value=g.reinvest===false?"0":"1";
+  document.getElementById("gRealTerms").checked=!!g.real_terms;
   document.getElementById("gNote").value=g.note||"";
-  toggleGoalFields();
+}
+function defaultGoalDraft(){
+  const t=totals();
+  return {
+    name:"",
+    type:"financial_assets",
+    target:500000,
+    target_date:"",
+    monthly_contribution:Math.round(t.monthly||0),
+    return_low:4,
+    return_base:6,
+    return_high:8,
+    inflation:2,
+    div_growth:finiteOr(t.expGrowth,5).toFixed(1),
+    reinvest:true,
+    real_terms:false,
+    note:""
+  };
+}
+function scrollGoalEditorIntoView(){
   setTimeout(()=>document.getElementById("goalEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+}
+function newGoal(){
+  goalEditIndex=null;
+  setGoalEditorVisible("Ziel hinzufügen");
+  fillGoalForm(defaultGoalDraft());
+  toggleGoalFields();
+  scrollGoalEditorIntoView();
+}
+function goalFromForm(){
+  const type=document.getElementById("gType").value;
+  return {
+    name:document.getElementById("gName").value.trim()||goalTypeLabel(type),
+    type,
+    target:+document.getElementById("gTarget").value||0,
+    target_date:document.getElementById("gDate").value||"",
+    monthly_contribution:+document.getElementById("gMonthly").value||0,
+    return_low:+document.getElementById("gReturnLow").value||0,
+    return_base:+document.getElementById("gReturnBase").value||0,
+    return_high:+document.getElementById("gReturnHigh").value||0,
+    inflation:+document.getElementById("gInflation").value||0,
+    real_terms:document.getElementById("gRealTerms").checked,
+    div_growth:+document.getElementById("gDivGrowth").value||0,
+    reinvest:document.getElementById("gReinvest").value==="1",
+    note:document.getElementById("gNote").value.trim()
+  };
+}
+function saveGoal(){const g=goalFromForm();if(g.target<=0){alert("Bitte einen Zielwert größer 0 eingeben.");return}if(goalEditIndex===null)goals.push(g);else goals[goalEditIndex]=g;persist();clearGoalForm();renderGoals()}
+function editGoal(i){
+  goalEditIndex=i;
+  const g=goals[i];
+  setGoalEditorVisible("Ziel bearbeiten");
+  fillGoalForm(g);
+  toggleGoalFields();
+  scrollGoalEditorIntoView();
 }
 function deleteGoal(i){if(!confirm(`Ziel „${goals[i]?.name||""}“ löschen?`))return;goals.splice(i,1);persist();renderGoals()}
 
@@ -1692,20 +1731,30 @@ function renderForecast(){
   for(let y=0;y<=5;y++){const val=y===0?t.div:totalForecast(y,growthOverride,scale,reinvest);html+=`<div class="split" style="padding:9px 0;border-bottom:1px solid var(--line)"><span class="label">Jahr ${y}</span><strong>${euro(val)}</strong></div>`}
   document.getElementById("yearForecast").innerHTML=html;
 }
+function positionMatchesQuery(p,q){
+  if(!q)return true;
+  return `${p.name} ${p.broker} ${p.note||""} ${p.source||""}`.toLowerCase().includes(q);
+}
+function dataRowActions(p,i){
+  return p.source==="sheet"
+    ? `<button class="btn small secondary" onclick="editPos(${i})">Growth</button>`
+    : `<button class="btn small secondary" onclick="editPos(${i})">Edit</button> <button class="btn small danger" onclick="deletePos(${i})">Delete</button>`;
+}
+function dataPositionCell(p){
+  return `<b>${esc(p.name)}</b>${p.sync_warning?`<div class="sub warn">⚠ ${esc(p.sync_warning)}</div>`:""}${p.note?`<div class="sub">${esc(p.note)}</div>`:""}`;
+}
+function dataPositionRow({p,i}){
+  const isSheet=p.source==="sheet";
+  return `<tr>
+    <td>${dataPositionCell(p)}</td>
+    <td>${esc(p.broker)}</td><td><span class="pill">${isSheet?"Sheet":"Manuell"}</span></td>
+    <td>${num(p.shares)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.expected_growth,1)}</td><td>${euro(p.monthly)}</td>
+    <td>${dataRowActions(p,i)}</td></tr>`;
+}
 function renderData(){
   const q=(document.getElementById("search").value||"").toLowerCase();
-  const rows=positions.map((p,i)=>({p,i})).filter(({p})=>!q||(`${p.name} ${p.broker} ${p.note||""} ${p.source||""}`).toLowerCase().includes(q));
-  document.getElementById("dataBody").innerHTML=rows.map(({p,i})=>{
-    const isSheet=p.source==="sheet";
-    const actions=isSheet
-      ? `<button class="btn small secondary" onclick="editPos(${i})">Growth</button>`
-      : `<button class="btn small secondary" onclick="editPos(${i})">Edit</button> <button class="btn small danger" onclick="deletePos(${i})">Delete</button>`;
-    return `<tr>
-      <td><b>${esc(p.name)}</b>${p.sync_warning?`<div class="sub warn">⚠ ${esc(p.sync_warning)}</div>`:""}${p.note?`<div class="sub">${esc(p.note)}</div>`:""}</td>
-      <td>${esc(p.broker)}</td><td><span class="pill">${isSheet?"Sheet":"Manuell"}</span></td>
-      <td>${num(p.shares)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.expected_growth,1)}</td><td>${euro(p.monthly)}</td>
-      <td>${actions}</td></tr>`;
-  }).join("");
+  const rows=positions.map((p,i)=>({p,i})).filter(({p})=>positionMatchesQuery(p,q));
+  setHtml("dataBody",rows.map(dataPositionRow).join(""));
 }
 function renderRealEstate(){
   const rt=propertyTotals();

@@ -197,7 +197,13 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "renderGrowthKpis",
   "growthRankingRow",
   "assetDetailHeroHtml",
-  "assetBrokerTableHtml"
+  "assetBrokerTableHtml",
+  "dataPositionRow",
+  "dataRowActions",
+  "goalAssumptionsText",
+  "goalScenarioGridHtml",
+  "fillGoalForm",
+  "defaultGoalDraft"
 ].forEach(symbol => check(`${symbol} exists`, html.includes(symbol)));
 
 check(
