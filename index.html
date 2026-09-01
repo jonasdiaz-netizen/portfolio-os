@@ -584,7 +584,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
 
     <div class="card" style="margin-top:12px">
-      <div class="split"><div><h2>Dividenden-Projektion</h2><div class="sub">Jahresdividende mit Expected Dividend Growth, Sparplänen und Reinvestition.</div></div><span class="pill">1-5 Jahre</span></div>
+      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Erwartete Jahresdividenden-Runrate nach X Jahren mit Growth, Sparplänen und Reinvestition.</div></div><span class="pill">1-5 Jahre</span></div>
       <div id="dividendProjection"></div>
     </div>
 
@@ -802,7 +802,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v14.5 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Dividenden-Projektion · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v14.6 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -1239,7 +1239,7 @@ function positionForecast(p,years=5,growthOverride=null,contribScale=1,reinvest=
   const annualContrib=(+p.monthly||0)*12*contribScale;
   for(let yr=1;yr<=years;yr++){
     div*=1+g;
-    div+=annualContrib*y*0.5;
+    div+=annualContrib*y;
     if(reinvest)div+=div*y;
   }
   return div;
