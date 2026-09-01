@@ -356,6 +356,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
 .net-worth-projection strong{color:var(--text)}
 .projection-savings{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px;color:var(--muted);font-size:12px}
 .projection-savings input{width:96px;background:#0f141a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:6px 8px;text-align:right}
+.projection-delta{font-size:.68em;font-weight:700;white-space:nowrap}
 .overview-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:9px;position:relative;z-index:1}
 .overview-stat{padding:12px;border:1px solid var(--line-soft);border-radius:11px;background:rgba(9,14,22,.58)}
 .overview-stat strong{font-size:15px;display:block;overflow-wrap:anywhere}
@@ -583,7 +584,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
 
     <div class="card" style="margin-top:12px">
-      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Erwartete Jahresdividenden-Runrate nach X Jahren mit Growth, Sparplänen und Reinvestition.</div></div><span class="pill">1-5 Jahre</span></div>
+      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Jahr 1-5 mit aktueller Sparplanlogik; danach konservativ mit 1.500 €/Monat und Reinvestition.</div></div><span class="pill">1-20 Jahre</span></div>
       <div id="dividendProjection"></div>
     </div>
 
@@ -801,7 +802,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v14.7 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v14.8 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende 1-20Y · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -1208,12 +1209,24 @@ function renderDividendProjection(t=totals()){
   const el=document.getElementById("dividendProjection");
   if(!el)return;
   let html=`<div class="split" style="padding:9px 0;border-bottom:1px solid var(--line)"><span class="label">Heute</span><strong>${euro(t.div,2)}</strong></div>`;
-  for(let year=1;year<=5;year++){
-    const value=totalForecast(year,null,1,true);
+  for(const year of [1,2,3,4,5,10,15,20]){
+    const value=forwardDividendRunrate(year,t);
     const delta=value-t.div;
-    html+=`<div class="split" style="padding:9px 0;border-bottom:1px solid var(--line)"><span class="label">Jahr ${year}</span><strong>${euro(value,2)} <span class="${delta>=0?"good":"bad"}">${delta>=0?"+":""}${euro(delta,2)}</span></strong></div>`;
+    const note=year>5?'<div class="tiny">ab Jahr 6: 1.500 €/Monat</div>':"";
+    html+=`<div class="split" style="padding:9px 0;border-bottom:1px solid var(--line)"><span><span class="label">Jahr ${year}</span>${note}</span><strong>${euro(value,2)} <span class="projection-delta ${delta>=0?"good":"bad"}">${delta>=0?"+":""}${euro(delta,2)}</span></strong></div>`;
   }
   el.innerHTML=html;
+}
+function forwardDividendRunrate(years,t=totals()){
+  if(years<=5)return totalForecast(years,null,1,true);
+  let div=totalForecast(5,null,1,true);
+  const y=Math.max(0,(+t.yield||0)/100);
+  const longTermAnnualSavings=1500*12;
+  for(let year=6;year<=years;year++){
+    div+=longTermAnnualSavings*y;
+    div+=div*y;
+  }
+  return div;
 }
 function brokerTotals(){
   const m={};
