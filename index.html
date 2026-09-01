@@ -462,7 +462,6 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
       </div>
       <div class="overview-stats">
         <div class="overview-stat"><div class="label">Financial Assets</div><strong id="mFinancialAssets">–</strong></div>
-        <div class="overview-stat"><div class="label">Depot ohne Krypto</div><strong id="mInvestedAssets">–</strong></div>
         <div class="overview-stat"><div class="label">Krypto</div><strong id="mCryptoAssets">–</strong></div>
         <div class="overview-stat"><div class="label">Immobilien-Eigenkapital</div><strong id="mPropertyEquity">–</strong></div>
         <div class="overview-stat"><div class="label">Cash</div><strong id="mCash">–</strong></div>
@@ -802,7 +801,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v14.6 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v14.7 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -1795,7 +1794,6 @@ function renderDashboardOverview(t,rt){
   if(savingsInput&&document.activeElement!==savingsInput)savingsInput.value=getProjectionMonthlySavings();
   document.getElementById("mNetWorth").className=`metric net-worth-metric ${netWorth<0?"bad":""}`;
   setText("mFinancialAssets",euro(t.financialValue));
-  setText("mInvestedAssets",euro(coreInvestedValue));
   setText("mCryptoAssets",euro(cryptoValue));
   setText("mPropertyEquity",euro(rt.equity));
   setText("mCash",euro(t.cash));
