@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v20-editable-projection-savings`;
+const CACHE = `${CACHE_PREFIX}v21-dividend-projection`;
 const ASSETS = [
   "./index.html",
   "./manifest.webmanifest",
