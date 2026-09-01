@@ -210,6 +210,7 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "netWorthProjection12m",
   "getProjectionMonthlySavings",
   "saveProjectionMonthlySavings",
+  "renderDividendProjection",
   "renderDashboardOverview",
   "renderDashboardInvestment",
   "renderGrowthKpis",
@@ -261,7 +262,9 @@ check(
     "mNetWorthProjection",
     "12M-Projektion",
     "projectionSavingsInput",
-    "PROJECTION_SAVINGS_KEY"
+    "PROJECTION_SAVINGS_KEY",
+    "dividendProjection",
+    "Dividenden-Projektion"
   ])
 );
 
@@ -294,7 +297,7 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("service worker cache version bumped", sw.includes("v20-editable-projection-savings"));
+check("service worker cache version bumped", sw.includes("v21-dividend-projection"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
