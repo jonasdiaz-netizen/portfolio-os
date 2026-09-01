@@ -268,6 +268,7 @@ check(
     "annualContrib*y"
   ])
 );
+check("dashboard omits separate depot tile", !html.includes('id="mInvestedAssets"'));
 
 check(
   "portfolio growth KPI aliases are mapped",
@@ -298,7 +299,7 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("service worker cache version bumped", sw.includes("v22-forward-dividend-runrate"));
+check("service worker cache version bumped", sw.includes("v23-four-dashboard-tiles"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
