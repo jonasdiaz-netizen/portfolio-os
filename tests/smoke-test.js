@@ -269,6 +269,8 @@ check(
     "annualContrib*y",
     "projection-delta",
     "1.500 €/Monat",
+    "longTermDividendGrowth=0.05",
+    "5% Div.-Growth",
     "for(const year of [1,2,3,4,5,10,15,20])"
   ])
 );
@@ -303,7 +305,7 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("service worker cache version bumped", sw.includes("v24-long-term-forward-dividend"));
+check("service worker cache version bumped", sw.includes("v25-long-term-dividend-growth"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
