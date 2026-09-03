@@ -802,7 +802,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v14.9 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende 1-20Y · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v15.0 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende 1-20Y · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -2323,7 +2323,7 @@ async function syncFromSheet(isAuto=false){
     const manualDiv=manualSnapshot.reduce((a,p)=>a+(+p.annual_div||0),0);
     const manualMonthly=manualSnapshot.reduce((a,p)=>a+(+p.monthly||0),0);
     const syncUrl=base+sep+"secret="+encodeURIComponent(secret)+"&manual_present=1&manual_value="+encodeURIComponent(manualValue)+"&manual_div="+encodeURIComponent(manualDiv)+"&manual_monthly="+encodeURIComponent(manualMonthly);
-    const data=await jsonp(syncUrl,22000);
+    const data=await jsonp(syncUrl,45000);
     if(!data||!data.ok)throw new Error(data?.error||"Unbekannter Sync-Fehler");
     const mapped=mapSyncPayload(data);
     if(mapped.cashTotal!==null){
