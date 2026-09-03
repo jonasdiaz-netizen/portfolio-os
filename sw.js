@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v25-long-term-dividend-growth`;
+const CACHE = `${CACHE_PREFIX}v26-longer-sheet-sync-timeout`;
 const ASSETS = [
   "./index.html",
   "./manifest.webmanifest",
