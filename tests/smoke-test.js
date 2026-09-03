@@ -305,7 +305,8 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("service worker cache version bumped", sw.includes("v25-long-term-dividend-growth"));
+check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
+check("service worker cache version bumped", sw.includes("v26-longer-sheet-sync-timeout"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
