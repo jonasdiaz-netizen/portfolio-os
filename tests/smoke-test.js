@@ -291,6 +291,18 @@ check("sheet sync applies private defaults from mapped payload", /applyPrivateDe
 check("sheet sync saves mapped health", /saveHealth\(mapped\.health,mapped\.warnings\)/.test(html));
 check("legacy expected growth fallback still exists", html.includes("defaultExpectedGrowth(p.name)"));
 check("N/A display helper exists", html.includes("pctMaybe"));
+check(
+  "watchlist view is wired",
+  includesAll(html, [
+    'data-view="watchlist"',
+    'id="watchlist"',
+    "WATCHLIST_KEY",
+    "mapWatchlistItem",
+    "renderWatchlist",
+    "watchlistBody"
+  ])
+);
+check("watchlist sync payload is consumed", html.includes("data?.watchlist") && html.includes("mapped.watchlist"));
 
 try {
   new Function(sw);
@@ -306,7 +318,7 @@ if (appsScript) {
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
 check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
-check("service worker cache version bumped", sw.includes("v26-longer-sheet-sync-timeout"));
+check("service worker cache version bumped", sw.includes("v27-watchlist-view"));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
@@ -334,6 +346,7 @@ if (appsScript) {
   check("Apps Script includes optional Krypto tab", appsScript.includes('"Krypto"') && appsScript.includes('"Crypto"'));
   check("Apps Script maps crypto aliases", includesAll(appsScript, ["Coin", "Token", "Menge", "Marktwert EUR"]));
   check("Apps Script marks crypto positions", appsScript.includes('asset_class:isCryptoTab ? "Krypto" : ""'));
+  check("Apps Script exports watchlist payload", includesAll(appsScript, ["WATCHLIST_TAB", "readWatchlist_", "watchlist:watchlist"]));
 }
 
 [
