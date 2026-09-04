@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v26-longer-sheet-sync-timeout`;
+const CACHE = `${CACHE_PREFIX}v27-watchlist-view`;
 const ASSETS = [
   "./index.html",
   "./manifest.webmanifest",
