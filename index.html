@@ -379,6 +379,10 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
 .diagnostic-grid .mini strong{display:block;margin-top:2px}
 .source-badge-sheet{color:var(--good);border-color:rgba(98,214,165,.28)}
 .source-badge-fallback{color:var(--warn);border-color:rgba(232,189,100,.30)}
+.watchlist-kpis{margin-bottom:12px}
+.watchlist-table{min-width:980px}
+.watchlist-table th:nth-child(2),.watchlist-table td:nth-child(2){text-align:right}
+.watchlist-table th:nth-child(4),.watchlist-table td:nth-child(4){text-align:left}
 
 /* Responsive layout */
 @media(max-width:1000px){
@@ -441,6 +445,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     <button class="active" data-view="dashboard">Dashboard</button>
     <button data-view="portfolio">Portfolio</button>
     <button data-view="growth">Growth</button>
+    <button data-view="watchlist">Watchlist</button>
     <button data-view="analysis">Analyse</button>
     <button data-view="dividends">Dividenden</button>
     <button data-view="forecast">Forecast</button>
@@ -538,6 +543,21 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
       <div class="tablebox" style="margin-top:12px"><table class="growth-table">
         <thead><tr><th>Position</th><th>Depotwert</th><th>Gewicht</th><th>Growth Metric</th><th>Expected Dividend Growth</th></tr></thead>
         <tbody id="growthNaBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="watchlist" class="view">
+    <div class="grid3 watchlist-kpis">
+      <div class="card"><div class="label">Watchlist Werte</div><div class="metric" id="wCount">–</div><div class="sub">aus dem Google-Sheet-Reiter Watchlist</div></div>
+      <div class="card"><div class="label">Kaufzone</div><div class="metric" id="wBuyZone">–</div><div class="sub">Kaufzone oder starke Kaufzone</div></div>
+      <div class="card"><div class="label">Nächster Kandidat</div><div class="metric growth-name" id="wClosest">–</div><div class="sub" id="wClosestSub">noch keine Watchlist synchronisiert</div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="split"><div><h2>Watchlist</h2><div class="sub">Aktuelle Kurse, Dividenden und Kaufranges kommen aus dem Sheet. Kaufzonen bleiben dort editierbar.</div></div><span class="pill" id="wSyncedAt">noch nicht synchronisiert</span></div>
+      <div class="tablebox" style="margin-top:12px"><table class="watchlist-table">
+        <thead><tr><th>Position</th><th>Kurs</th><th>Kurs EUR</th><th>Kaufrange</th><th>Spannend ab</th><th>Stark ab</th><th>Abstand</th><th>Div. p.a.</th><th>Div Yield</th><th>P/E</th><th>Growth</th></tr></thead>
+        <tbody id="watchlistBody"></tbody>
       </table></div>
     </div>
   </section>
@@ -802,7 +822,7 @@ tbody tr:hover td{background:rgba(116,145,218,.035)}
     </div>
   </section>
 
-  <div class="footer">Portfolio OS v15.0 · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende 1-20Y · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
+  <div class="footer">Portfolio OS v16.0 · Watchlist mit Kaufranges · Gesamtportfolio-Dashboard · 12M-Projektion mit Sparrate · Krypto-Allokation · Forward-Dividende 1-20Y · Growth Contribution + Growth-Profile · Asset-Details, Ziele, Historie und Dividendenkalender.</div>
 </div>
 
 <script>
@@ -821,6 +841,7 @@ const GOALS_KEY = "portfolio_os_v11_goals";
 const ALLOCATION_KEY = "portfolio_os_v11_allocation";
 const GROWTH_KPI_KEY = "portfolio_os_v12_growth_kpis";
 const PROJECTION_SAVINGS_KEY = "portfolio_os_v13_projection_savings";
+const WATCHLIST_KEY = "portfolio_os_v16_watchlist";
 const DEFAULT_SYNC_SECRET = "";
 const SHEET_POSITION_FIELDS = {
   fundamentalGrowth: [
@@ -925,6 +946,8 @@ let positions=loadPositions(), properties=loadProperties(), editIndex=null, reEd
 let portfolioMeta=[], portfolioHistory=[], historyRange="3M", selectedDividendMonth=null;
 try{portfolioMeta=JSON.parse(localStorage.getItem(META_KEY)||"[]")||[]}catch(_){portfolioMeta=[]}
 try{portfolioHistory=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")||[]}catch(_){portfolioHistory=[]}
+let watchlist=[];
+try{watchlist=JSON.parse(localStorage.getItem(WATCHLIST_KEY)||"[]")||[]}catch(_){watchlist=[]}
 let portfolioGrowthKpis=null;
 try{portfolioGrowthKpis=JSON.parse(localStorage.getItem(GROWTH_KPI_KEY)||"null")}catch(_){portfolioGrowthKpis=null}
 let goals=[], goalEditIndex=null, allocationDimension="asset_class", allocationTargets={}, selectedAssetName=null, assetDetailReturnView="portfolio";
@@ -965,6 +988,13 @@ function pct(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{minimumFract
 function num(x,dec=2){return (Number(x)||0).toLocaleString("de-DE",{maximumFractionDigits:dec})}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function pctMaybe(x,dec=1){return x===null||x===undefined||!Number.isFinite(Number(x))?"–":pct(x,dec)}
+function money(value,currency="EUR",dec=2){
+  const cur=String(currency||"EUR").trim();
+  if(value===null||value===undefined||value==="")return "–";
+  if(!Number.isFinite(Number(value)))return "–";
+  if(cur==="GBp")return `${num(value,dec)} GBp`;
+  return `${num(value,dec)} ${cur}`;
+}
 function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value}
 function setHtml(id,value){const el=document.getElementById(id);if(el)el.innerHTML=value}
 function setDisplay(id,visible){const el=document.getElementById(id);if(el)el.style.display=visible?"block":"none"}
@@ -1031,11 +1061,37 @@ function mapSyncPayload(data){
     meta:Array.isArray(data?.meta)?data.meta:null,
     history:Array.isArray(data?.history)?data.history:null,
     growthKpis,
+    watchlist:Array.isArray(data?.watchlist)?data.watchlist.map(mapWatchlistItem).filter(Boolean):null,
     privateDefaults:Array.isArray(data?.private_defaults)?data.private_defaults:[],
     positions:incoming,
     health:data?.health||{error_count:0,errors:[]},
     warnings:Array.isArray(data?.warnings)?data.warnings:[],
     syncedAt:data?.synced_at
+  };
+}
+function mapWatchlistItem(row){
+  if(!row||typeof row!=="object")return null;
+  const name=String(prop(row,["name","aktie","Aktie","position","Position"])||"").trim();
+  if(!name)return null;
+  const currency=String(prop(row,["currency","währung","Währung"])||"").trim()||"";
+  const status=String(prop(row,["buy_range","kaufrange","Kaufrange","status","Status"])||"").trim();
+  return {
+    name,
+    ticker:String(prop(row,["ticker","Ticker"])||"").trim(),
+    category:String(prop(row,["category","kategorie","Kategorie"])||"").trim(),
+    price:finiteOr(prop(row,["price","kurs","Kurs"]),null),
+    currency,
+    price_eur:finiteOr(prop(row,["price_eur","kurs_eur","Kurs EUR"]),null),
+    interesting_below:finiteOr(prop(row,["interesting_below","spannend_ab","Spannend ab"]),null),
+    strong_below:finiteOr(prop(row,["strong_below","stark_ab","Stark ab"]),null),
+    distance_interesting:parseMaybePct(prop(row,["distance_interesting","abstand_spannend","Abstand spannend"]),true),
+    distance_strong:parseMaybePct(prop(row,["distance_strong","abstand_stark","Abstand stark"]),true),
+    buy_range:status,
+    annual_dividend:finiteOr(prop(row,["annual_dividend","dividende_pa","Dividende p.a."]),null),
+    dividend_yield:parseMaybePct(prop(row,["dividend_yield","div_yield","Div Yield"]),true),
+    pe:finiteOr(prop(row,["pe","p_e","P/E (GF)"]),null),
+    growth:parseMaybePct(prop(row,["growth","growth_assumption","Growth Annahme"]),true),
+    note:String(prop(row,["note","kommentar","Kommentar"])||"").trim()
   };
 }
 function hasDirectDividendGrowth(){
@@ -1485,7 +1541,7 @@ function openAssetDetail(name){
   if(currentView&&currentView!=="assetdetail")assetDetailReturnView=currentView;
   selectedAssetName=match.name;
   renderAssetDetail(match.name);
-  const backLabel=({growth:"Growth",portfolio:"Portfolio",dividends:"Dividenden",dashboard:"Dashboard",analysis:"Analyse"})[assetDetailReturnView]||"Portfolio";
+  const backLabel=({growth:"Growth",watchlist:"Watchlist",portfolio:"Portfolio",dividends:"Dividenden",dashboard:"Dashboard",analysis:"Analyse"})[assetDetailReturnView]||"Portfolio";
   document.getElementById("assetBackBtn").textContent=`← Zurück zu ${backLabel}`;
   switchView("assetdetail");
   window.scrollTo({top:0,behavior:"smooth"});
@@ -1855,7 +1911,37 @@ function render(){
   renderBrokerBars();
   renderPortfolioOverviewTable(agg,t);
 
-  renderDividends();renderForecast();renderData();renderRealEstate();renderAnalysis();renderGrowth();renderCalendar();renderHistory();renderGoals();renderAllocation();renderGrowthDiagnostics();if(selectedAssetName)renderAssetDetail(selectedAssetName);
+  renderDividends();renderForecast();renderData();renderRealEstate();renderAnalysis();renderGrowth();renderWatchlist();renderCalendar();renderHistory();renderGoals();renderAllocation();renderGrowthDiagnostics();if(selectedAssetName)renderAssetDetail(selectedAssetName);
+}
+function watchlistRangeClass(value){
+  const s=String(value||"").toLowerCase();
+  if(s.includes("starke"))return "good";
+  if(s.includes("kaufzone"))return "good";
+  if(s.includes("nah"))return "warn";
+  return "";
+}
+function watchlistRows(){
+  return (watchlist||[]).slice().sort((a,b)=>{
+    const rank=s=>String(s||"").toLowerCase().includes("starke")?0:String(s||"").toLowerCase().includes("kaufzone")?1:String(s||"").toLowerCase().includes("nah")?2:3;
+    const ar=rank(a.buy_range),br=rank(b.buy_range);
+    if(ar!==br)return ar-br;
+    return finiteOr(a.distance_interesting,999)-finiteOr(b.distance_interesting,999);
+  });
+}
+function watchlistRowHtml(row){
+  const inPortfolio=positions.some(p=>normName(p.name)===normName(row.name));
+  const attrs=inPortfolio?` class="asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"`:"";
+  return `<tr${attrs}><td><b>${esc(row.name)}</b><div class="tiny">${esc([row.ticker,row.category].filter(Boolean).join(" · "))}</div></td><td>${money(row.price,row.currency)}</td><td>${row.price_eur===null?"–":euro(row.price_eur,2)}</td><td><span class="${watchlistRangeClass(row.buy_range)}">${esc(row.buy_range||"–")}</span></td><td>${money(row.interesting_below,row.currency)}</td><td>${money(row.strong_below,row.currency)}</td><td>${pctMaybe(row.distance_interesting,1)}</td><td>${money(row.annual_dividend,row.currency)}</td><td>${pctMaybe(row.dividend_yield,1)}</td><td>${row.pe===null?"–":num(row.pe,2)}</td><td>${growthCell(row.growth)}</td></tr>`;
+}
+function renderWatchlist(){
+  const rows=watchlistRows(),buyRows=rows.filter(row=>/kaufzone/i.test(row.buy_range||""));
+  const closest=rows.filter(row=>Number.isFinite(Number(row.distance_interesting))).sort((a,b)=>a.distance_interesting-b.distance_interesting)[0]||null;
+  setText("wCount",String(rows.length));
+  setText("wBuyZone",String(buyRows.length));
+  setText("wClosest",closest?closest.name:"–");
+  setText("wClosestSub",closest?`${closest.buy_range||"–"} · ${pctMaybe(closest.distance_interesting,1)} bis spannend`:"noch keine Watchlist synchronisiert");
+  setText("wSyncedAt",localStorage.getItem("portfolio_os_v4_last_sync")||"noch nicht synchronisiert");
+  setHtml("watchlistBody",rows.map(watchlistRowHtml).join("")||'<tr><td colspan="11" class="empty-state">Noch keine Watchlist synchronisiert. Bitte unter Sync einmal aktualisieren.</td></tr>');
 }
 function renderForecast(){
   const gv=+document.getElementById("fg").value,growthOverride=gv<0?null:gv,scale=+document.getElementById("fc").value/100,reinvest=+document.getElementById("fr").value===1;
@@ -2194,8 +2280,8 @@ document.getElementById("rCancelBtn").addEventListener("click",clearPropertyForm
 
 function createBackup(){
   return {
-    schemaVersion:14,
-    appVersion:"14.0",
+    schemaVersion:16,
+    appVersion:"16.0",
     exportedAt:new Date().toISOString(),
     positions,
     properties,
@@ -2205,6 +2291,7 @@ function createBackup(){
     goals,
     allocationTargets,
     portfolioGrowthKpis,
+    watchlist,
     portfolioMeta,
     portfolioHistory,
     health:loadHealth(),
@@ -2237,6 +2324,10 @@ function restoreBackup(backup){
   if(Array.isArray(backup.portfolioHistory)){
     portfolioHistory=backup.portfolioHistory;
     localStorage.setItem(HISTORY_KEY,JSON.stringify(portfolioHistory));
+  }
+  if(Array.isArray(backup.watchlist)){
+    watchlist=backup.watchlist.map(mapWatchlistItem).filter(Boolean);
+    localStorage.setItem(WATCHLIST_KEY,JSON.stringify(watchlist));
   }
   if(Object.prototype.hasOwnProperty.call(backup,"portfolioGrowthKpis")){
     portfolioGrowthKpis=normalizeGrowthKpis(backup.portfolioGrowthKpis)||null;
@@ -2274,7 +2365,7 @@ document.getElementById("importFile").addEventListener("change",async e=>{
 document.getElementById("saveSyncBtn").addEventListener("click",saveSyncSettings);
 document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSettings();syncFromSheet(false)});
 
-document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;localStorage.removeItem(GROWTH_KPI_KEY);localStorage.removeItem(PROJECTION_SAVINGS_KEY);persist();clearForm();clearPropertyForm();clearGoalForm();render()});
+document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;watchlist=[];localStorage.removeItem(GROWTH_KPI_KEY);localStorage.removeItem(PROJECTION_SAVINGS_KEY);localStorage.removeItem(WATCHLIST_KEY);persist();clearForm();clearPropertyForm();clearGoalForm();render()});
 
 function loadSyncSettings(){
   document.getElementById("syncUrl").value=localStorage.getItem(SYNC_URL_KEY)||"";
@@ -2332,6 +2423,7 @@ async function syncFromSheet(isAuto=false){
     }
     if(mapped.meta){portfolioMeta=mapped.meta;localStorage.setItem(META_KEY,JSON.stringify(portfolioMeta));}
     if(mapped.history){portfolioHistory=mapped.history;localStorage.setItem(HISTORY_KEY,JSON.stringify(portfolioHistory));}
+    if(mapped.watchlist){watchlist=mapped.watchlist;localStorage.setItem(WATCHLIST_KEY,JSON.stringify(watchlist));}
     const syncedGrowthKpis=mapped.growthKpis;
     if(syncedGrowthKpis){portfolioGrowthKpis=syncedGrowthKpis;localStorage.setItem(GROWTH_KPI_KEY,JSON.stringify(portfolioGrowthKpis));}
     else{portfolioGrowthKpis=null;localStorage.removeItem(GROWTH_KPI_KEY);}
