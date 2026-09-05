@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Portfolio OS</title>
-<link rel="stylesheet" href="styles.css?v=28">
+<link rel="stylesheet" href="styles.css?v=29">
 
 <meta name="theme-color" content="#0b0e14">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,6 +30,7 @@
     <button data-view="growth">Growth</button>
     <button data-view="watchlist">Watchlist</button>
     <button data-view="analysis">Analyse</button>
+    <button data-view="currencies">Währungen</button>
     <button data-view="dividends">Dividenden</button>
     <button data-view="forecast">Forecast</button>
     <button data-view="goals">Ziele</button>
@@ -164,6 +165,32 @@
       <div class="card analysis-bars"><h2>Assetklassen</h2><div id="assetBars"></div></div>
     </div>
     <div class="card" style="margin-top:12px"><div class="sub">Die Klassifizierung kommt aus dem privaten Sheet-Reiter <b>PortfolioMeta</b> und kann dort jederzeit angepasst werden. ETFs werden in dieser ersten Version auf Fondsebene klassifiziert; ein echtes ETF-Look-through können wir später ergänzen.</div></div>
+  </section>
+
+  <section id="currencies" class="view">
+    <div class="grid4 currency-kpis">
+      <div class="card"><div class="label">Währungs-Exposure</div><div class="metric" id="cMappedValue">–</div><div class="sub" id="cMappedSub">Aktien & ETFs mit Währungsmodell</div></div>
+      <div class="card"><div class="label">Coverage</div><div class="metric" id="cCoverage">–</div><div class="sub" id="cCoverageSub">währungsrelevante Assets abgedeckt</div></div>
+      <div class="card"><div class="label">Größte Währung</div><div class="metric currency-name" id="cTopCurrency">–</div><div class="sub" id="cTopCurrencySub">noch keine Zuordnung</div></div>
+      <div class="card"><div class="label">Dividenden abgedeckt</div><div class="metric" id="cDividendCoverage">–</div><div class="sub" id="cDividendCoverageSub">Auszahlungswährung · Wert in EUR</div></div>
+    </div>
+
+    <div class="grid2 currency-chart-grid">
+      <div class="card currency-chart-card">
+        <div class="split"><div><h2>Währungsexposure</h2><div class="sub">Ökonomische Währung: Aktien als Primärwährung, ETFs per Look-through.</div></div><span class="data-badge">Gewichtung</span></div>
+        <div id="currencyWeightChart"></div>
+      </div>
+      <div class="card currency-chart-card">
+        <div class="split"><div><h2>Exposure nach Wert</h2><div class="sub">Dieselben Anteile, als aktueller EUR-Wert deines Portfolios.</div></div><span class="data-badge">EUR</span></div>
+        <div id="currencyValueChart"></div>
+      </div>
+    </div>
+
+    <div class="card currency-dividend-card">
+      <div class="split"><div><h2>Dividenden nach Auszahlungswährung</h2><div class="sub">Beträge werden im Sheet bereits mit dem aktuellen FX-Kurs in EUR umgerechnet und beim Sync gruppiert.</div></div><span class="data-badge">EUR nach Sync</span></div>
+      <div class="currency-dividend-list" id="currencyDividendChart"></div>
+      <div class="currency-coverage-note" id="currencyCoverageNote"></div>
+    </div>
   </section>
 
   <section id="dividends" class="view">
@@ -441,7 +468,13 @@ const SHEET_POSITION_FIELDS = {
   ],
   growthMetric: ["growth_metric","Growth Metric"],
   assetClass: ["asset_class","assetklasse","Assetklasse","Asset Class"],
-  sourceSheet: ["source_sheet","source_tab","sheet","Sheet","Tab"]
+  sourceSheet: ["source_sheet","source_tab","sheet","Sheet","Tab"],
+  currencyModel: ["currency_model","exposure_model","Exposure model"],
+  currencyExposure: ["currency_exposure","currency_exposure_weights","Currency exposure"],
+  primaryCurrency: ["primary_exposure_currency","exposure_currency","Primary exposure currency"],
+  dividendCurrency: ["dividend_currency","payout_currency","Dividend currency"],
+  includeCurrencyExposure: ["include_currency_exposure","include_in_exposure","Include in exposure"],
+  currencyNote: ["currency_mapping_note","currency_note","Currency note"]
 };
 const SHEET_PORTFOLIO_KPI_FIELDS = {
   fundamentalGrowth: [
@@ -481,6 +514,26 @@ function parseMaybePct(value,scaleFraction=true){
   if(!Number.isFinite(n))return null;
   return scaleFraction&&Math.abs(n)>0&&Math.abs(n)<=1?n*100:n;
 }
+function normalizeCurrencyCode(value){
+  const code=String(value||"").trim().toUpperCase();
+  return /^[A-Z]{3,6}$/.test(code)&&code!=="N/A"?code:"";
+}
+function parseCurrencyExposure(value){
+  if(typeof value==="string"){
+    try{value=JSON.parse(value)}catch(_){return []}
+  }
+  const raw=Array.isArray(value)?value:(value&&typeof value==="object"?Object.entries(value).map(([currency,weight])=>({currency,weight})):[]);
+  const rows=[];
+  for(const item of raw){
+    const currency=normalizeCurrencyCode(Array.isArray(item)?item[0]:item?.currency);
+    let weight=Number(Array.isArray(item)?item[1]:item?.weight);
+    if(!currency||!Number.isFinite(weight)||weight<=0)continue;
+    if(weight>1)weight/=100;
+    rows.push({currency,weight});
+  }
+  const total=rows.reduce((sum,row)=>sum+row.weight,0);
+  return total?rows.map(row=>({...row,weight:row.weight/total})):[];
+}
 function mapSheetPosition(p,source="manual"){
   const fundamentalGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fundamentalGrowth),false);
   const rawDividendGrowth=prop(p,SHEET_POSITION_FIELDS.dividendGrowth);
@@ -489,6 +542,13 @@ function mapSheetPosition(p,source="manual"){
   const fcfGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fcfGrowth),false);
   const assetClass=prop(p,SHEET_POSITION_FIELDS.assetClass) || "";
   const sourceSheet=prop(p,SHEET_POSITION_FIELDS.sourceSheet) || "";
+  const currencyModel=String(prop(p,SHEET_POSITION_FIELDS.currencyModel)||p.currency_model||"").trim().toUpperCase();
+  const primaryCurrency=normalizeCurrencyCode(prop(p,SHEET_POSITION_FIELDS.primaryCurrency)||p.primary_exposure_currency);
+  const rawCurrencyExposure=prop(p,SHEET_POSITION_FIELDS.currencyExposure);
+  const currencyExposure=parseCurrencyExposure(rawCurrencyExposure!==undefined?rawCurrencyExposure:p.currency_exposure);
+  const dividendCurrency=normalizeCurrencyCode(prop(p,SHEET_POSITION_FIELDS.dividendCurrency)||p.dividend_currency);
+  const includeCurrencyRaw=prop(p,SHEET_POSITION_FIELDS.includeCurrencyExposure);
+  const includeCurrencyExposure=includeCurrencyRaw===undefined?p.include_currency_exposure!==false:!/^(no|false|0)$/i.test(String(includeCurrencyRaw).trim());
   const isCrypto=/\b(krypto|crypto)\b/i.test([assetClass,sourceSheet,p.broker].filter(Boolean).join(" "));
   const fallbackGrowth=parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false);
   const expectedGrowth=dividendGrowth ?? fallbackGrowth ?? (hasDividendGrowthField?null:(isCrypto?0:defaultExpectedGrowth(p.name)));
@@ -498,6 +558,12 @@ function mapSheetPosition(p,source="manual"){
     growth_metric: prop(p,SHEET_POSITION_FIELDS.growthMetric) || p.growth_metric || "",
     asset_class: assetClass || p.asset_class || "",
     source_sheet: sourceSheet || p.source_sheet || "",
+    currency_model: currencyModel,
+    currency_exposure: currencyExposure,
+    primary_exposure_currency: primaryCurrency,
+    dividend_currency: dividendCurrency,
+    include_currency_exposure: includeCurrencyExposure,
+    currency_mapping_note: String(prop(p,SHEET_POSITION_FIELDS.currencyNote)||p.currency_mapping_note||"").trim(),
     fundamental_growth: fundamentalGrowth,
     expected_dividend_growth: dividendGrowth,
     dividend_growth_explicit_na: hasDividendGrowthField&&dividendGrowth===null,
@@ -1036,6 +1102,84 @@ function renderAnalysis(){
   set("aLargest",pct(t.investedValue?largest.value/t.investedValue*100:0,1));set("aLargestName",largest.name||"–");set("aTop10",pct(t.investedValue?top10/t.investedValue*100:0,1));set("aCash",pct(t.financialValue?t.cash/t.financialValue*100:0,1));set("aCoverage",pct(total?covered/total*100:0,0));
   renderAnalysisBars("sectorBars",analysisBucket(rows,"sector"),total);renderAnalysisBars("regionBars",analysisBucket(rows,"region"),total);renderAnalysisBars("assetBars",analysisBucket(rows,"asset_class"),total);
 }
+const CURRENCY_COLORS={USD:"#4f8cff",EUR:"#65d3a3",GBP:"#f1c35c",CHF:"#fb8623",JPY:"#b99af1",CAD:"#e89da3",AUD:"#55a9ed",CNY:"#d77cc7",TWD:"#60c7c3",KRW:"#8297ed",HKD:"#e5aa66",SGD:"#8ad0a7",SEK:"#73b5cc",NOK:"#9eaeca",INR:"#d1a769",DKK:"#9f9abf",OTHER:"#778396"};
+function currencyColor(code){return CURRENCY_COLORS[code]||CURRENCY_COLORS.OTHER}
+function isCurrencyExcludedPosition(p){
+  const model=String(p.currency_model||"").toUpperCase();
+  const meta=positionClassification(p);
+  return model==="EXCLUDE"||(model&&p.include_currency_exposure===false)||isCryptoPosition(p)||isGoldPosition(p)||/\b(cash|geldmarkt)\b/i.test([p.currency_asset_class,meta.asset_class,p.name,p.broker].filter(Boolean).join(" "));
+}
+function positionCurrencyExposure(p){
+  const explicit=parseCurrencyExposure(p.currency_exposure);
+  if(explicit.length)return explicit;
+  const primary=normalizeCurrencyCode(p.primary_exposure_currency);
+  return primary?[{currency:primary,weight:1}]:[];
+}
+function currencyExposureData(){
+  const exposure=new Map(),dividends=new Map(),unmappedNames=[],unmappedDividendNames=[];
+  let eligibleValue=0,mappedValue=0,excludedValue=0,eligibleDividend=0,mappedDividend=0;
+  for(const p of positions){
+    const value=Math.max(0,+p.value||0),annualDividend=Math.max(0,+p.annual_div||0);
+    if(value<=0&&annualDividend<=0)continue;
+    if(isCurrencyExcludedPosition(p)){excludedValue+=value;continue}
+    if(value>0){
+      eligibleValue+=value;
+      const rules=positionCurrencyExposure(p);
+      if(rules.length){
+        mappedValue+=value;
+        for(const rule of rules)exposure.set(rule.currency,(exposure.get(rule.currency)||0)+value*rule.weight);
+      }else{
+        unmappedNames.push(p.name||"Unbenannt");
+      }
+    }
+    if(annualDividend>0){
+      eligibleDividend+=annualDividend;
+      const currency=normalizeCurrencyCode(p.dividend_currency);
+      if(currency){
+        mappedDividend+=annualDividend;
+        dividends.set(currency,(dividends.get(currency)||0)+annualDividend);
+      }else{
+        unmappedDividendNames.push(p.name||"Unbenannt");
+      }
+    }
+  }
+  const rows=map=>[...map.entries()].map(([currency,value])=>({currency,value,share:map===exposure&&mappedValue?value/mappedValue*100:map===dividends&&mappedDividend?value/mappedDividend*100:0})).sort((a,b)=>b.value-a.value);
+  return {rows:rows(exposure),dividends:rows(dividends),eligibleValue,mappedValue,excludedValue,unmappedValue:Math.max(0,eligibleValue-mappedValue),eligibleDividend,mappedDividend,unmappedDividend:Math.max(0,eligibleDividend-mappedDividend),unmappedNames:[...new Set(unmappedNames)],unmappedDividendNames:[...new Set(unmappedDividendNames)]};
+}
+function currencyLegend(rows,total,mode){
+  return `<div class="currency-legend">${rows.map(row=>`<div class="currency-legend-row"><span class="currency-key"><i style="--currency-color:${currencyColor(row.currency)}"></i>${esc(row.currency==="OTHER"?"Sonstige":row.currency)}</span><strong>${mode==="value"?euro(row.value):pct(total?row.value/total*100:0,1)}</strong><span class="currency-legend-sub">${mode==="value"?pct(total?row.value/total*100:0,1):euro(row.value)}</span></div>`).join("")}</div>`;
+}
+function currencyDonutHtml(rows,total,mode){
+  if(!rows.length||total<=0)return '<div class="empty-state">Noch keine Währungsdaten synchronisiert. Nach dem nächsten Sync erscheint die Zuordnung aus Currency_Map und ETF_Exposure.</div>';
+  const radius=42,circumference=2*Math.PI*radius;
+  let offset=0;
+  const arcs=rows.map(row=>{const length=Math.max(.6,circumference*row.value/total),dashOffset=-offset;offset+=length;return `<circle class="currency-donut-segment" cx="50" cy="50" r="${radius}" stroke="${currencyColor(row.currency)}" stroke-dasharray="${length} ${Math.max(0,circumference-length)}" stroke-dashoffset="${dashOffset}"/>`}).join("");
+  const top=rows[0],center=mode==="value"?euro(total):pct(top.value/total*100,1),centerSub=mode==="value"?"abgedeckter Wert":`${top.currency} · größte Währung`;
+  return `<div class="currency-donut-layout"><div class="currency-donut-wrap"><svg class="currency-donut" viewBox="0 0 100 100" role="img" aria-label="Währungsexposure als Donut-Diagramm"><circle class="currency-donut-track" cx="50" cy="50" r="${radius}"/>${arcs}<text class="currency-donut-value" x="50" y="48" text-anchor="middle">${esc(center)}</text><text class="currency-donut-label" x="50" y="58" text-anchor="middle">${esc(centerSub)}</text></svg></div>${currencyLegend(rows,total,mode)}</div>`;
+}
+function renderCurrencyExposure(){
+  const data=currencyExposureData(),coverage=data.eligibleValue?data.mappedValue/data.eligibleValue*100:null,dividendCoverage=data.eligibleDividend?data.mappedDividend/data.eligibleDividend*100:null,top=data.rows[0]||null;
+  setText("cMappedValue",data.mappedValue?euro(data.mappedValue):"–");
+  setText("cMappedSub",data.mappedValue?`${data.rows.length} Währungen · ohne Cash, Gold & Krypto`:"Aktien & ETFs mit Währungsmodell");
+  setText("cCoverage",pctMaybe(coverage,0));
+  setText("cCoverageSub",data.unmappedValue?`${euro(data.unmappedValue)} noch ohne Währungsmodell`:"währungsrelevante Assets abgedeckt");
+  setText("cTopCurrency",top?top.currency:"–");
+  setText("cTopCurrencySub",top?`${pct(top.share,1)} · ${euro(top.value)}`:"noch keine Zuordnung");
+  setText("cDividendCoverage",pctMaybe(dividendCoverage,0));
+  setText("cDividendCoverageSub",data.mappedDividend?`${euro(data.mappedDividend,2)} Jahresdividende in EUR`:"Auszahlungswährung · Wert in EUR");
+  setHtml("currencyWeightChart",currencyDonutHtml(data.rows,data.mappedValue,"weight"));
+  setHtml("currencyValueChart",currencyDonutHtml(data.rows,data.mappedValue,"value"));
+  const dividendEl=document.getElementById("currencyDividendChart");
+  if(dividendEl){
+    const max=data.dividends[0]?.value||1;
+    dividendEl.innerHTML=data.dividends.length?data.dividends.map(row=>`<div class="currency-dividend-row"><span class="currency-key"><i style="--currency-color:${currencyColor(row.currency)}"></i>${esc(row.currency)}</span><span class="currency-dividend-track"><span style="width:${Math.max(2,row.value/max*100)}%;background:${currencyColor(row.currency)}"></span></span><strong>${euro(row.value,2)}</strong><span>${pct(row.share,1)}</span></div>`).join(""):'<div class="empty-state">Noch keine Dividendendaten mit Auszahlungswährung synchronisiert.</div>';
+  }
+  const exclusions=[];
+  if(data.excludedValue>0)exclusions.push(`${euro(data.excludedValue)} bewusst ausgeschlossen (Cash, Gold, Krypto, Derivate oder ungeprüfte Fonds)`);
+  if(data.unmappedNames.length)exclusions.push(`noch offen: ${data.unmappedNames.slice(0,5).map(esc).join(", ")}${data.unmappedNames.length>5?" …":""}`);
+  if(data.unmappedDividendNames.length)exclusions.push(`Dividenden ohne Auszahlungswährung: ${data.unmappedDividendNames.slice(0,4).map(esc).join(", ")}${data.unmappedDividendNames.length>4?" …":""}`);
+  setHtml("currencyCoverageNote",exclusions.join(" · ")||"Die Zuordnung kommt aus Currency_Map; ETFs werden über ETF_Exposure auf ihre zugrunde liegenden Währungen verteilt.");
+}
 function calendarData(){
   const mm=metaLookup(),months=Array(12).fill(0),events=[],unassigned=[];
   for(const p of positions){const d=+p.annual_div||0;if(d<=0)continue;const meta=mm.get(normName(p.name))||{},ms=Array.isArray(meta.dividend_months)?meta.dividend_months.map(Number).filter(x=>x>=1&&x<=12):[];if(!ms.length){unassigned.push({name:p.name,div:d});continue}const each=d/ms.length;for(const m of ms){months[m-1]+=each;events.push({month:m,name:p.name,amount:each})}}
@@ -1526,7 +1670,7 @@ function render(){
   renderBrokerBars();
   renderPortfolioOverviewTable(agg,t);
 
-  renderDividends();renderForecast();renderData();renderRealEstate();renderAnalysis();renderGrowth();renderWatchlist();renderCalendar();renderHistory();renderGoals();renderAllocation();renderGrowthDiagnostics();if(selectedAssetName)renderAssetDetail(selectedAssetName);
+  renderDividends();renderForecast();renderData();renderRealEstate();renderAnalysis();renderCurrencyExposure();renderGrowth();renderWatchlist();renderCalendar();renderHistory();renderGoals();renderAllocation();renderGrowthDiagnostics();if(selectedAssetName)renderAssetDetail(selectedAssetName);
 }
 function watchlistRangeClass(value){
   const s=String(value||"").toLowerCase();
@@ -1733,12 +1877,24 @@ function openBrokerData(broker){
 function applyPrivateDefaults(defaults){
   if(!Array.isArray(defaults)) return;
   for(const d of defaults){
-    const exists=positions.some(p=>
+    const index=positions.findIndex(p=>
       (d.private_key && p.private_key===d.private_key) ||
       (String(p.broker||"").toLowerCase()===String(d.broker||"").toLowerCase() &&
        String(p.name||"").toLowerCase()===String(d.name||"").toLowerCase())
     );
-    if(!exists) positions.push({...d,source:"manual"});
+    if(index<0){
+      positions.push(mapSheetPosition({...d,source:"manual"},"manual"));
+    }else{
+      const current=positions[index];
+      positions[index]=mapSheetPosition({...current,
+        currency_model:d.currency_model,
+        currency_exposure:d.currency_exposure,
+        primary_exposure_currency:d.primary_exposure_currency,
+        dividend_currency:d.dividend_currency,
+        include_currency_exposure:d.include_currency_exposure,
+        currency_mapping_note:d.currency_mapping_note
+      },current.source||"manual");
+    }
   }
 }
 function oldSheetBuckets(){
