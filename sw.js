@@ -1,7 +1,8 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v27-watchlist-view`;
+const CACHE = `${CACHE_PREFIX}v28-premium-design`;
 const ASSETS = [
   "./index.html",
+  "./styles.css?v=28",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
