@@ -318,7 +318,14 @@ if (appsScript) {
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
 check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
-check("service worker cache version bumped", sw.includes("v27-watchlist-view"));
+check("service worker cache version bumped", sw.includes("v28-premium-design"));
+const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
+check("shared stylesheet is linked", stylesheetHref === "styles.css?v=28");
+check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));
+check("shared stylesheet exists", fs.existsSync(path.join(root, "styles.css")));
+check("legacy inline theme removed", !html.includes("<style>"));
+check("mobile safe area enabled", html.includes("viewport-fit=cover"));
+check("navigation has accessible label", html.includes('aria-label="Hauptnavigation"'));
 check("service worker bypasses cross-origin requests", /url\.origin\s*!==\s*self\.location\.origin/.test(sw));
 check("service worker limits index fallback to navigation", sw.includes('request.mode==="navigate"'));
 check("service worker deletes only own caches", sw.includes("key.startsWith(CACHE_PREFIX)"));
