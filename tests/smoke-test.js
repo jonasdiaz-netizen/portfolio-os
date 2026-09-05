@@ -277,7 +277,11 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "propertyCardHtml",
   "allocationModel",
   "allocationRowHtml",
-  "bindAllocationTargetInputs"
+  "bindAllocationTargetInputs",
+  "parseCurrencyExposure",
+  "currencyExposureData",
+  "currencyDonutHtml",
+  "renderCurrencyExposure"
 ].forEach(symbol => check(`${symbol} exists`, html.includes(symbol)));
 
 check("no inline onclick attributes", !/\sonclick=/.test(html));
@@ -352,6 +356,19 @@ check(
   ])
 );
 check("watchlist sync payload is consumed", html.includes("data?.watchlist") && html.includes("mapped.watchlist"));
+check(
+  "currency exposure view is wired",
+  includesAll(html, [
+    'data-view="currencies"',
+    'id="currencies"',
+    'id="currencyWeightChart"',
+    'id="currencyValueChart"',
+    'id="currencyDividendChart"',
+    "currency_model",
+    "currency_exposure",
+    "dividend_currency"
+  ])
+);
 
 try {
   new Function(sw);
@@ -367,9 +384,9 @@ if (appsScript) {
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
 check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
-check("service worker cache version bumped", sw.includes("v29-maintenance-fixes"));
+check("service worker cache version bumped", sw.includes("v30-currency-exposure"));
 const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
-check("shared stylesheet is linked", stylesheetHref === "styles.css?v=28");
+check("shared stylesheet is linked", stylesheetHref === "styles.css?v=29");
 check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));
 check("shared stylesheet exists", fs.existsSync(path.join(root, "styles.css")));
 check("legacy inline theme removed", !html.includes("<style>"));
