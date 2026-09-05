@@ -113,6 +113,7 @@ b, strong { font-weight: 600; }
 .pulse-divider { height: 1px; background: var(--line-soft); margin: 18px 0; }
 .history-card, .property-card, .goal-card, .kpirow, .goal-grid, .diagnostic-grid { margin-top: var(--gap); }
 .analysis-kpis, .growth-kpis, .watchlist-kpis, .contribution-card { margin-bottom: var(--gap); }
+.currency-kpis { margin-bottom: var(--gap); }
 .note { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--muted); font-size: .8125rem; line-height: 1.7; overflow-wrap: anywhere; }
 .healthbar { display: none; margin-bottom: 16px; padding: 12px 16px; border: 1px solid rgba(223, 189, 124, .25); border-radius: 12px; background: rgba(223, 189, 124, .04); color: var(--warn); font-size: .8125rem; line-height: 1.6; }
 .healthitem { padding: 12px 0; border-bottom: 1px solid var(--line-soft); font-size: .8125rem; overflow-wrap: anywhere; }
@@ -234,6 +235,34 @@ tr.asset-row td:first-child b::after, b.asset-row::after { content: " ›"; padd
 .monthvalue { font-size: .75rem; font-weight: 550; margin-top: 4px; }
 .calendar-table { margin-top: 24px; }
 
+/* Currency exposure — compact SVG donuts, no chart dependency required */
+.currency-chart-grid { margin-top: 0; }
+.currency-chart-card { overflow: hidden; }
+.currency-chart-card > .split, .currency-dividend-card > .split { align-items: flex-start; }
+.currency-donut-layout { display: grid; grid-template-columns: minmax(180px, .88fr) minmax(190px, 1.12fr); gap: 22px; align-items: center; min-height: 260px; padding-top: 6px; }
+.currency-donut-wrap { min-width: 0; display: grid; place-items: center; }
+.currency-donut { width: min(100%, 245px); overflow: visible; }
+.currency-donut-track, .currency-donut-segment { fill: none; stroke-width: 14; transform: rotate(-90deg); transform-origin: 50px 50px; }
+.currency-donut-track { stroke: #273141; }
+.currency-donut-segment { stroke-linecap: butt; transition: stroke-dasharray .2s, stroke-dashoffset .2s; }
+.currency-donut-value { fill: var(--text); font-family: inherit; font-size: 8px; font-weight: 600; letter-spacing: -.25px; }
+.currency-donut-label { fill: var(--muted); font-family: inherit; font-size: 3.5px; font-weight: 500; }
+.currency-legend { display: grid; align-content: center; gap: 8px; min-width: 0; }
+.currency-legend-row { display: grid; grid-template-columns: minmax(70px, 1fr) auto; gap: 2px 14px; align-items: center; min-width: 0; padding: 3px 0; }
+.currency-key { display: inline-flex; align-items: center; min-width: 0; gap: 8px; color: #d8dfeb; font-size: .8125rem; font-weight: 500; }
+.currency-key i { display: inline-block; flex: 0 0 auto; width: 7px; height: 22px; border-radius: 999px; background: var(--currency-color); }
+.currency-legend-row strong { color: var(--text); font-size: .8125rem; text-align: right; }
+.currency-legend-sub { grid-column: 2; color: var(--muted); font-size: .6875rem; text-align: right; }
+.currency-dividend-card { margin-top: var(--gap); }
+.currency-dividend-list { display: grid; gap: 13px; margin-top: 24px; }
+.currency-dividend-row { display: grid; grid-template-columns: minmax(86px, 130px) minmax(40px, 1fr) 110px 52px; gap: 13px; align-items: center; font-size: .8125rem; }
+.currency-dividend-row > strong { text-align: right; font-size: .8125rem; font-weight: 550; white-space: nowrap; }
+.currency-dividend-row > :last-child { color: var(--muted); text-align: right; white-space: nowrap; }
+.currency-dividend-track { display: block; height: 6px; overflow: hidden; border-radius: 99px; background: #273141; }
+.currency-dividend-track > span { display: block; height: 100%; min-width: 2px; border-radius: inherit; }
+.currency-coverage-note { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line-soft); color: var(--muted); font-size: .75rem; line-height: 1.65; }
+.currency-name { font-size: 1.375rem; line-height: 1.3; overflow-wrap: anywhere; }
+
 /* Asset details, forecasts, and goals */
 .detail-hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr); gap: var(--gap); }
 .detail-title { font-size: 2rem; font-weight: 600; line-height: 1.2; letter-spacing: -.035em; overflow-wrap: anywhere; }
@@ -288,6 +317,7 @@ tr.asset-row td:first-child b::after, b.asset-row::after { content: " ›"; padd
   .split { gap: 10px 16px; }
   .card > .split:first-child, .property-head { flex-wrap: wrap; }
   .history-toolbar { gap: 4px; }
+  .currency-donut-layout { grid-template-columns: minmax(150px, .82fr) minmax(175px, 1.18fr); gap: 16px; }
 }
 
 /* iPhone / narrow layouts: balanced KPI pairs and comfortable touch targets */
@@ -323,6 +353,16 @@ tr.asset-row td:first-child b::after, b.asset-row::after { content: " ›"; padd
   .rowbar { grid-template-columns: minmax(80px, 100px) minmax(24px, 1fr) 88px; gap: 10px; }
   .analysis-bars .rowbar { grid-template-columns: minmax(90px, 1fr) minmax(32px, 1fr) 58px; }
   #analysis > .grid3 { grid-template-columns: minmax(0, 1fr); }
+  .currency-donut-layout { grid-template-columns: 1fr; min-height: 0; gap: 18px; }
+  .currency-donut { width: min(100%, 220px); }
+  .currency-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 14px; }
+  .currency-legend-row { grid-template-columns: minmax(55px, 1fr) auto; gap: 1px 8px; }
+  .currency-key { gap: 6px; font-size: .75rem; }
+  .currency-key i { width: 5px; height: 18px; }
+  .currency-legend-row strong { font-size: .75rem; }
+  .currency-legend-sub { font-size: .625rem; }
+  .currency-dividend-row { grid-template-columns: minmax(78px, 1fr) minmax(30px, .85fr) 92px 46px; gap: 8px; }
+  .currency-dividend-row > strong, .currency-dividend-row > :last-child { font-size: .75rem; }
   .contribution-row { grid-template-columns: minmax(105px, 1.2fr) minmax(24px, .7fr) 90px; gap: 10px; }
   .chartbox { height: 240px; padding: 8px 0; }
   .monthgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }

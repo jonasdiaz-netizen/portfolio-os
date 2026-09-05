@@ -1,8 +1,8 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v28-premium-design`;
+const CACHE = `${CACHE_PREFIX}v30-currency-exposure`;
 const ASSETS = [
   "./index.html",
-  "./styles.css?v=28",
+  "./styles.css?v=29",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",

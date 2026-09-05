@@ -97,12 +97,15 @@ function defaultExpectedGrowth(name) {
 
 function mapFixturePosition(position, source = "manual") {
   const fundamentalGrowth = parseMaybePct(prop(position, sheetPositionFields.fundamentalGrowth), false);
-  const dividendGrowth = parseMaybePct(prop(position, sheetPositionFields.dividendGrowth), false);
+  const rawDividendGrowth = prop(position, sheetPositionFields.dividendGrowth);
+  const hasDividendGrowthField = rawDividendGrowth !== undefined;
+  const dividendGrowth = parseMaybePct(rawDividendGrowth, false);
   const fcfGrowth = parseMaybePct(prop(position, sheetPositionFields.fcfGrowth), false);
   const assetClass = prop(position, sheetPositionFields.assetClass) || "";
   const sourceSheet = prop(position, sheetPositionFields.sourceSheet) || "";
   const isCrypto = /\b(krypto|crypto)\b/i.test([assetClass, sourceSheet, position.broker].filter(Boolean).join(" "));
-  const expectedGrowth = dividendGrowth ?? parseMaybePct(position.expected_growth, false) ?? parseMaybePct(position.growth, false) ?? (isCrypto ? 0 : defaultExpectedGrowth(position.name));
+  const fallbackGrowth = parseMaybePct(position.expected_growth, false) ?? parseMaybePct(position.growth, false);
+  const expectedGrowth = dividendGrowth ?? fallbackGrowth ?? (hasDividendGrowthField ? null : (isCrypto ? 0 : defaultExpectedGrowth(position.name)));
   return {
     ...position,
     source: position.source || source,
@@ -112,12 +115,25 @@ function mapFixturePosition(position, source = "manual") {
     source_sheet: sourceSheet || position.source_sheet || "",
     fundamental_growth: fundamentalGrowth,
     expected_dividend_growth: dividendGrowth,
+    dividend_growth_explicit_na: hasDividendGrowthField && dividendGrowth === null,
     fcf_share_growth: fcfGrowth,
     expected_growth: expectedGrowth
   };
 }
 
 function normalizeFixtureGrowthKpis(raw) {
+  if (Array.isArray(raw)) {
+    const obj = {};
+    for (const row of raw) {
+      if (Array.isArray(row) && row.length >= 2) obj[String(row[0] || "").trim()] = row[1];
+      else if (row && typeof row === "object") {
+        const key = prop(row, ["metric", "kpi", "name", "label"]);
+        const value = prop(row, ["value", "amount", "current"]);
+        if (key !== undefined) obj[String(key).trim()] = value;
+      }
+    }
+    raw = obj;
+  }
   if (!raw || typeof raw !== "object") return null;
   const fundamental = parseMaybePct(prop(raw, sheetPortfolioKpiFields.fundamentalGrowth), false);
   const dividend = parseMaybePct(prop(raw, sheetPortfolioKpiFields.dividendGrowth), false);
@@ -134,11 +150,19 @@ function normalizeFixtureGrowthKpis(raw) {
 
 function extractFixtureGrowthKpis(data) {
   const candidates = [data, data?.portfolio_kpis, data?.growth_kpis, data?.dashboard, data?.metrics, data?.portfolio_metrics];
+  const merged = { fundamental_growth: null, dividend_growth: null, fundamental_growth_coverage: null, dividend_growth_coverage: null };
+  let hasAny = false;
   for (const candidate of candidates) {
     const kpis = normalizeFixtureGrowthKpis(candidate);
-    if (kpis) return kpis;
+    if (!kpis) continue;
+    for (const key of Object.keys(merged)) {
+      if (merged[key] === null && kpis[key] !== null && kpis[key] !== undefined) {
+        merged[key] = kpis[key];
+        hasAny = true;
+      }
+    }
   }
-  return null;
+  return hasAny ? merged : null;
 }
 
 function weightedGrowth(positions, valueField, weightField) {
@@ -160,13 +184,38 @@ function weightedGrowth(positions, valueField, weightField) {
   };
 }
 
+function dividendGrowthValue(position) {
+  const sheet = parseMaybePct(position.expected_dividend_growth, false);
+  if (sheet !== null) return { value: sheet, source: "Sheet" };
+  const fallback = parseMaybePct(position.expected_growth, false);
+  if (fallback !== null) return { value: fallback, source: "Fallback" };
+  return { value: null, source: "N/A" };
+}
+
+function weightedDividendGrowth(positions) {
+  let weighted = 0;
+  let eligibleWeight = 0;
+  let totalWeight = 0;
+  for (const position of positions) {
+    const weight = Number(position.annual_div) || 0;
+    if (weight <= 0) continue;
+    totalWeight += weight;
+    const growth = dividendGrowthValue(position).value;
+    if (growth === null) continue;
+    weighted += weight * growth;
+    eligibleWeight += weight;
+  }
+  return {
+    value: eligibleWeight ? weighted / eligibleWeight : null,
+    coverage: totalWeight ? eligibleWeight / totalWeight * 100 : null
+  };
+}
+
 function fixtureGrowthTotals(payload) {
   const positions = (payload.positions || []).map(position => mapFixturePosition({ ...position, source: "sheet" }, "sheet"));
   const portfolioGrowthKpis = extractFixtureGrowthKpis(payload);
   const fromPositionsFundamental = weightedGrowth(positions, "fundamental_growth", "value");
-  const fromPositionsDividend = weightedGrowth(positions, "expected_dividend_growth", "annual_div");
-  const legacyDividend = weightedGrowth(positions, "expected_growth", "annual_div");
-  const effectiveDividend = fromPositionsDividend.value !== null ? fromPositionsDividend : legacyDividend;
+  const effectiveDividend = weightedDividendGrowth(positions);
   return {
     positions,
     fundamentalGrowth: portfolioGrowthKpis?.fundamental_growth ?? fromPositionsFundamental.value,
@@ -228,7 +277,11 @@ check("static getElementById refs exist", missingStaticRefs.length === 0, missin
   "propertyCardHtml",
   "allocationModel",
   "allocationRowHtml",
-  "bindAllocationTargetInputs"
+  "bindAllocationTargetInputs",
+  "parseCurrencyExposure",
+  "currencyExposureData",
+  "currencyDonutHtml",
+  "renderCurrencyExposure"
 ].forEach(symbol => check(`${symbol} exists`, html.includes(symbol)));
 
 check("no inline onclick attributes", !/\sonclick=/.test(html));
@@ -303,6 +356,19 @@ check(
   ])
 );
 check("watchlist sync payload is consumed", html.includes("data?.watchlist") && html.includes("mapped.watchlist"));
+check(
+  "currency exposure view is wired",
+  includesAll(html, [
+    'data-view="currencies"',
+    'id="currencies"',
+    'id="currencyWeightChart"',
+    'id="currencyValueChart"',
+    'id="currencyDividendChart"',
+    "currency_model",
+    "currency_exposure",
+    "dividend_currency"
+  ])
+);
 
 try {
   new Function(sw);
@@ -318,9 +384,9 @@ if (appsScript) {
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
 check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
-check("service worker cache version bumped", sw.includes("v28-premium-design"));
+check("service worker cache version bumped", sw.includes("v30-currency-exposure"));
 const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
-check("shared stylesheet is linked", stylesheetHref === "styles.css?v=28");
+check("shared stylesheet is linked", stylesheetHref === "styles.css?v=29");
 check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));
 check("shared stylesheet exists", fs.existsSync(path.join(root, "styles.css")));
 check("legacy inline theme removed", !html.includes("<style>"));
@@ -348,6 +414,26 @@ const cryptoFixture = fixtureGrowthTotals({
 check("crypto sheet positions stay in positions", cryptoFixture.positions.length === 2);
 check("crypto sheet positions default to zero dividend growth", cryptoFixture.positions.every(position => position.expected_growth === 0));
 check("crypto sheet positions keep asset class", cryptoFixture.positions.every(position => position.asset_class === "Krypto"));
+
+const mixedDividendGrowth = fixtureGrowthTotals({
+  positions: [
+    { name: "Direct Growth", value: 1000, annual_div: 100, expected_dividend_growth: 10 },
+    { name: "Legacy Growth", value: 9000, annual_div: 900, expected_growth: 4 }
+  ]
+});
+check("partial direct dividend growth keeps legacy fallback", closeTo(mixedDividendGrowth.dividendGrowth, 4.6), `${mixedDividendGrowth.dividendGrowth} !== 4.6`);
+check("partial direct dividend growth remains fully covered", closeTo(mixedDividendGrowth.dividendGrowthCoverage, 100), `${mixedDividendGrowth.dividendGrowthCoverage} !== 100`);
+
+const mixedKpis = extractFixtureGrowthKpis({
+  fundamental_growth: 12.7,
+  growth_kpis: { dividend_growth: 6.8, dividend_growth_coverage: 80.7 }
+});
+check("portfolio KPI extraction merges partial sources", mixedKpis && closeTo(mixedKpis.fundamental_growth, 12.7) && closeTo(mixedKpis.dividend_growth, 6.8) && closeTo(mixedKpis.dividend_growth_coverage, 80.7));
+
+check("sync rejects missing positions list", html.includes("Sync-Payload enthält keine positions-Liste"));
+check("sync protects existing sheet positions from empty payloads", html.includes("allow_empty_positions"));
+check("sync prevents concurrent requests", html.includes("let syncInFlight=false") && html.includes("Sync läuft bereits"));
+check("null cash_total is ignored", html.includes("data.cash_total!==null") && html.includes("cashTotal:Number.isFinite(cashValue)?cashValue:null"));
 
 if (appsScript) {
   check("Apps Script includes optional Krypto tab", appsScript.includes('"Krypto"') && appsScript.includes('"Crypto"'));
@@ -377,6 +463,7 @@ check("backup fixture stores goals", Array.isArray(backup.goals));
 check("backup fixture stores allocation targets", backup.allocationTargets && typeof backup.allocationTargets === "object");
 check("backup fixture does not store sync secret", !JSON.stringify(backup).includes("portfolio_os_v4_sync_secret"));
 check("backup fixture does not store sync url", !JSON.stringify(backup).includes("portfolio_os_v4_sync_url"));
+check("current backup metadata is v17", html.includes("schemaVersion:17") && html.includes('appVersion:"17.0"') && html.includes("portfolio-os-v17-backup.json"));
 
 if (failures.length) {
   console.error("Smoke test failed:");
