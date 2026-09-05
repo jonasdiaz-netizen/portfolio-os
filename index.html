@@ -66,7 +66,7 @@
     <div class="grid5 investment-kpis">
       <div class="card"><div class="label">Invested Portfolio</div><div class="metric" id="mValue">–</div><div class="sub">ohne Cash · <span id="syncMini">Snapshot</span></div></div>
       <div class="card"><div class="label">Annual Dividend</div><div class="metric" id="mDiv">–</div><div class="sub" id="mMonthly"></div></div>
-      <div class="card"><div class="label">Portfolio Yield</div><div class="metric" id="mYield">–</div><div class="sub">Dividende ÷ Depotwert</div></div>
+      <div class="card"><div class="label">Portfolio Yield</div><div class="metric" id="mYield">–</div><div class="sub">Ertrag ÷ Financial Assets</div></div>
       <div class="card"><div class="label">Expected Fundamental Growth</div><div class="metric" id="mFundamentalGrowth">–</div><div class="sub" id="mFundamentalCoverage">gewichtet nach Positionswert</div></div>
       <div class="card"><div class="label">Expected Dividend Growth</div><div class="metric" id="mExpectedGrowth">–</div><div class="sub" id="mDividendGrowthCoverage">gewichtet nach Dividendeneinkommen</div></div>
     </div>
@@ -195,11 +195,11 @@
 
   <section id="dividends" class="view">
     <div class="grid5">
-      <div class="card"><div class="label">Annual Dividend</div><div class="metric" id="dAnnual">–</div></div>
+      <div class="card"><div class="label">Annual Dividend</div><div class="metric" id="dAnnual">–</div><div class="sub" id="dAnnualSub"></div></div>
       <div class="card"><div class="label">Monthly Dividend</div><div class="metric" id="dMonthly">–</div></div>
-      <div class="card"><div class="label">Current Yield</div><div class="metric" id="dYield">–</div></div>
+      <div class="card"><div class="label">Current Yield</div><div class="metric" id="dYield">–</div><div class="sub" id="dYieldSub"></div></div>
       <div class="card"><div class="label">Expected Dividend Growth</div><div class="metric" id="dGrowth">–</div></div>
-      <div class="card"><div class="label">Dividend Growth Coverage</div><div class="metric" id="dGrowthCoverage">–</div><div class="sub">nach Jahresdividende gewichtet</div></div>
+      <div class="card"><div class="label">Dividend Growth Coverage</div><div class="metric" id="dGrowthCoverage">–</div><div class="sub">nach Dividendenpositionen · ohne Cash-Zins</div></div>
     </div>
 
     <div class="card contribution-card" style="margin-top:12px">
@@ -214,7 +214,7 @@
     </div>
 
     <div class="card" style="margin-top:12px">
-      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Jahr 1-5 mit aktueller Sparplanlogik; danach konservativ mit 1.500 €/Monat, 5% Dividend Growth und Reinvestition.</div></div><span class="pill">1-20 Jahre</span></div>
+      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Jahr 1-5 mit aktueller Sparplanlogik; danach konservativ mit 1.500 €/Monat, 5% Dividend Growth und Reinvestition. Cash-Zins bleibt bei 2,6% p.a. konstant.</div></div><span class="pill">1-20 Jahre</span></div>
       <div id="dividendProjection"></div>
     </div>
 
@@ -432,7 +432,7 @@
     </div>
   </section>
 
-  <footer class="footer"><span>Portfolio OS <span class="footer-version">v17.0</span></span><span>Google-Sheet-Sync · lokal gespeichert</span></footer>
+  <footer class="footer"><span>Portfolio OS <span class="footer-version">v17.1</span></span><span>Google-Sheet-Sync · lokal gespeichert</span></footer>
 </div>
 
 <script>
@@ -452,6 +452,7 @@ const ALLOCATION_KEY = "portfolio_os_v11_allocation";
 const GROWTH_KPI_KEY = "portfolio_os_v12_growth_kpis";
 const PROJECTION_SAVINGS_KEY = "portfolio_os_v13_projection_savings";
 const WATCHLIST_KEY = "portfolio_os_v16_watchlist";
+const CASH_INTEREST_RATE = 2.6;
 const DEFAULT_SYNC_SECRET = "";
 const SHEET_POSITION_FIELDS = {
   fundamentalGrowth: [
@@ -621,6 +622,9 @@ function getCashTotal(){
   if(raw===null || raw==="") return 0;
   const n=Number(raw);
   return Number.isFinite(n)?n:0;
+}
+function cashInterestAnnual(cash=getCashTotal()){
+  return Math.max(0,Number(cash)||0)*CASH_INTEREST_RATE/100;
 }
 function getProjectionMonthlySavings(){
   const raw=localStorage.getItem(PROJECTION_SAVINGS_KEY);
@@ -798,7 +802,9 @@ function totals(){
   const investedValue=positions.reduce((a,p)=>a+(+p.value||0),0);
   const cash=getCashTotal();
   const financialValue=investedValue+cash;
-  const div=positions.reduce((a,p)=>a+(+p.annual_div||0),0);
+  const portfolioDividend=positions.reduce((a,p)=>a+(+p.annual_div||0),0);
+  const cashInterest=cashInterestAnnual(cash);
+  const div=portfolioDividend+cashInterest;
   const monthly=positions.reduce((a,p)=>a+(+p.monthly||0),0);
   const growth=growthTotals();
   return {
@@ -806,13 +812,16 @@ function totals(){
     investedValue,
     cash,
     financialValue,
+    portfolioDividend,
+    cashInterest,
     div,
     monthly,
     expGrowth:growth.dividendGrowth,
     fundamentalGrowth:growth.fundamentalGrowth,
     fundamentalCoverage:growth.fundamentalCoverage,
     dividendGrowthCoverage:growth.dividendGrowthCoverage,
-    yield:investedValue?div/investedValue*100:0
+    investmentYield:investedValue?portfolioDividend/investedValue*100:0,
+    yield:financialValue?div/financialValue*100:0
   };
 }
 function aggregate(){
@@ -935,13 +944,15 @@ function renderGrowth(){
 }
 function renderDividends(){
   const t=totals(),rows=dividendGrowthRows(),drivers=rows.filter(row=>row.contribution!==null&&Number.isFinite(Number(row.contribution)));
-  document.getElementById("dAnnual").textContent=euro(t.div);document.getElementById("dMonthly").textContent=euro(t.div/12);document.getElementById("dYield").textContent=pct(t.yield);document.getElementById("dGrowth").textContent=pctMaybe(t.expGrowth,1);document.getElementById("dGrowthCoverage").textContent=pctMaybe(t.dividendGrowthCoverage,1);
+  document.getElementById("dAnnual").textContent=euro(t.div);document.getElementById("dAnnualSub").textContent=t.cashInterest?`inkl. ${euro(t.cashInterest,2)} Cash-Zins p.a. (${pct(CASH_INTEREST_RATE,1)})`:"";document.getElementById("dMonthly").textContent=euro(t.div/12);document.getElementById("dYield").textContent=pct(t.yield);document.getElementById("dYieldSub").textContent="Ertrag ÷ Financial Assets";document.getElementById("dGrowth").textContent=pctMaybe(t.expGrowth,1);document.getElementById("dGrowthCoverage").textContent=pctMaybe(t.dividendGrowthCoverage,1);
   document.getElementById("divGrowthCount").textContent=`${drivers.length} Treiber`;
   const top=drivers[0]||null,coveredContribution=drivers.reduce((sum,row)=>sum+row.contribution,0);
   document.getElementById("divGrowthSummary").textContent=top?`${top.name} ist aktuell der größte Treiber. Abgedeckter Beitrag zur Gesamtdividende: ${coveredContribution>=0?"+":""}${num(coveredContribution,2)} Prozentpunkte; der KPI wird innerhalb der Coverage normiert.`:"Welche Positionen das erwartete Wachstum deiner Jahresdividende am stärksten treiben.";
   renderContributionBars("divGrowthContributionBars",drivers);
   renderDividendProjection(t);
-  document.getElementById("divBody").innerHTML=rows.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}"><td><b>${esc(row.name)}</b></td><td>${esc(row.brokers)}</td><td>${euro(row.dividend,2)}</td><td>${pct(row.dividendShare,1)}</td><td>${pct(row.yield)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td><td>${growthSourceBadge(row.source)}</td></tr>`).join("")||'<tr><td colspan="8" class="empty-state">Noch keine Dividendenzahler vorhanden.</td></tr>';
+  const positionRows=rows.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}"><td><b>${esc(row.name)}</b></td><td>${esc(row.brokers)}</td><td>${euro(row.dividend,2)}</td><td>${pct(t.div?row.dividend/t.div*100:0,1)}</td><td>${pct(row.yield)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td><td>${growthSourceBadge(row.source)}</td></tr>`).join("");
+  const cashRow=t.cashInterest?`<tr><td><b>Cash-Zins</b></td><td>Cash</td><td>${euro(t.cashInterest,2)}</td><td>${pct(t.cashInterest/t.div*100,1)}</td><td>${pct(CASH_INTEREST_RATE,1)}</td><td>${naBadge()}</td><td>–</td><td><span class="data-badge">Konstant</span></td></tr>`:"";
+  document.getElementById("divBody").innerHTML=positionRows+cashRow||'<tr><td colspan="8" class="empty-state">Noch keine Dividendenzahler vorhanden.</td></tr>';
 }
 function renderDividendProjection(t=totals()){
   const el=document.getElementById("dividendProjection");
@@ -957,8 +968,8 @@ function renderDividendProjection(t=totals()){
 }
 function forwardDividendRunrate(years,t=totals()){
   if(years<=5)return totalForecast(years,null,1,true);
-  let div=totalForecast(5,null,1,true);
-  const y=Math.max(0,(+t.yield||0)/100);
+  let div=totalForecastPositions(5,null,1,true);
+  const y=Math.max(0,(+t.investmentYield||0)/100);
   const longTermDividendGrowth=0.05;
   const longTermAnnualSavings=1500*12;
   for(let year=6;year<=years;year++){
@@ -966,7 +977,7 @@ function forwardDividendRunrate(years,t=totals()){
     div+=longTermAnnualSavings*y;
     div+=div*y;
   }
-  return div;
+  return div+t.cashInterest;
 }
 function brokerTotals(){
   const m={};
@@ -997,6 +1008,9 @@ function positionForecast(p,years=5,growthOverride=null,contribScale=1,reinvest=
   return div;
 }
 function totalForecast(years,growthOverride=null,contribScale=1,reinvest=true){
+  return totalForecastPositions(years,growthOverride,contribScale,reinvest)+cashInterestAnnual();
+}
+function totalForecastPositions(years,growthOverride=null,contribScale=1,reinvest=true){
   return positions.reduce((a,p)=>a+positionForecast(p,years,growthOverride,contribScale,reinvest),0);
 }
 
@@ -1186,13 +1200,13 @@ function calendarData(){
   return {months,events,unassigned};
 }
 function renderCalendar(){
-  const data=calendarData(),names=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"],max=Math.max(...data.months,1),assigned=data.months.reduce((a,x)=>a+x,0),total=totals().div;
+  const data=calendarData(),t=totals(),names=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"],max=Math.max(...data.months,1),assigned=data.months.reduce((a,x)=>a+x,0),total=t.portfolioDividend;
   const grid=document.getElementById("dividendMonthGrid");
   if(grid){
     grid.innerHTML=data.months.map((v,i)=>`<div class="monthcard${selectedDividendMonth===i+1?" active":""}" data-month="${i+1}" title="${names[i]} anzeigen"><div class="monthbarwrap"><div class="monthbar" style="height:${Math.max(v?4:1,v/max*100)}%"></div></div><div class="monthname">${names[i]}</div><div class="monthvalue">${euro(v)}</div></div>`).join("");
     grid.querySelectorAll(".monthcard").forEach(card=>card.addEventListener("click",()=>{selectedDividendMonth=Number(card.dataset.month);renderCalendar()}));
   }
-  const cov=document.getElementById("calendarCoverage");if(cov)cov.textContent=`${pct(total?assigned/total*100:0,0)} der aktuellen Jahresdividende sind einem Ausschüttungsmonat zugeordnet${data.unassigned.length?` · ${data.unassigned.length} Position(en) noch ohne Monat`:""}. Beträge sind Schätzwerte aus Jahresdividende ÷ Ausschüttungsmonate. Klick auf einen Monat für Details.`;
+  const cov=document.getElementById("calendarCoverage");if(cov)cov.textContent=`${pct(total?assigned/total*100:0,0)} der Dividendenpositionen sind einem Ausschüttungsmonat zugeordnet${data.unassigned.length?` · ${data.unassigned.length} Position(en) noch ohne Monat`:""}. ${t.cashInterest?`${euro(t.cashInterest,2)} Cash-Zins p.a. ist bewusst keinem Ausschüttungsmonat zugeordnet. `:""}Beträge sind Schätzwerte aus Jahresdividende ÷ Ausschüttungsmonate. Klick auf einen Monat für Details.`;
   const body=document.getElementById("nextDividendBody"),title=document.getElementById("calendarTableTitle"),reset=document.getElementById("calendarReset");
   if(reset)reset.style.display=selectedDividendMonth?"inline-block":"none";
   if(selectedDividendMonth){
@@ -1383,14 +1397,14 @@ function findWealthGoalMonths(g,annualReturn){const target=+g.target||0,monthly=
 function projectDividendGoalMonths(g,growthAdj=0){
   const t=totals();
   const targetAnnual=g.type==="monthly_dividend"?(+g.target||0)*12:(+g.target||0);
-  const portfolioYield=t.investedValue?t.div/t.investedValue:0;
+  const portfolioYield=(+t.investmentYield||0)/100;
   const monthlyContribution=Math.max(0,+g.monthly_contribution||0);
   const baseGrowth=finiteOr(g.div_growth,finiteOr(t.expGrowth,0));
   const annualGrowth=Math.max(-99,baseGrowth+growthAdj)/100;
   const monthlyGrowth=Math.pow(1+annualGrowth,1/12)-1;
-  let annualDividend=t.div;
+  let annualDividend=t.portfolioDividend;
   for(let month=0;month<=600;month++){
-    if(annualDividend>=targetAnnual)return month;
+    if(annualDividend+t.cashInterest>=targetAnnual)return month;
     annualDividend*=1+monthlyGrowth;
     annualDividend+=monthlyContribution*portfolioYield;
     if(g.reinvest!==false)annualDividend+=(annualDividend/12)*portfolioYield;
@@ -1637,12 +1651,12 @@ function renderDashboardOverview(t,rt){
 function renderDashboardInvestment(t,agg){
   setText("mValue",euro(t.investedValue));
   setText("mDiv",euro(t.div));
-  setText("mMonthly",euro(t.div/12)+" / Monat");
+  setText("mMonthly",euro(t.div/12)+` / Monat${t.cashInterest?` · inkl. ${euro(t.cashInterest,0)} Cash-Zins p.a.`:""}`);
   setText("mYield",pct(t.yield));
   setText("mFundamentalGrowth",pctMaybe(t.fundamentalGrowth,1));
   setText("mFundamentalCoverage",coverageText(t.fundamentalCoverage,"gewichtet nach Positionswert"));
   setText("mExpectedGrowth",pctMaybe(t.expGrowth,1));
-  setText("mDividendGrowthCoverage",coverageText(t.dividendGrowthCoverage,"gewichtet nach Dividendeneinkommen"));
+  setText("mDividendGrowthCoverage",coverageText(t.dividendGrowthCoverage,"Dividendenpositionen · ohne Cash-Zins"));
   setText("mSavings",euro(t.monthly)+"/Monat");
   const f5=totalForecast(5,null,1,true),cagr=t.div>0?((f5/t.div)**(1/5)-1)*100:0;
   const largest=agg[0]||null,top10=agg.slice(0,10).reduce((sum,row)=>sum+row.value,0);
@@ -2062,7 +2076,7 @@ document.getElementById("rCancelBtn").addEventListener("click",clearPropertyForm
 function createBackup(){
   return {
     schemaVersion:17,
-    appVersion:"17.0",
+    appVersion:"17.1",
     exportedAt:new Date().toISOString(),
     positions,
     properties,
@@ -2128,7 +2142,7 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(createBackup(),null,2)],{type:"application/json"});
   const link=document.createElement("a");
   link.href=URL.createObjectURL(blob);
-  link.download="portfolio-os-v17-backup.json";
+  link.download="portfolio-os-v17.1-backup.json";
   link.click();
   setTimeout(()=>URL.revokeObjectURL(link.href),0);
 });
