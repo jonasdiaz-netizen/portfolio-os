@@ -483,12 +483,15 @@ function parseMaybePct(value,scaleFraction=true){
 }
 function mapSheetPosition(p,source="manual"){
   const fundamentalGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fundamentalGrowth),false);
-  const dividendGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.dividendGrowth),false);
+  const rawDividendGrowth=prop(p,SHEET_POSITION_FIELDS.dividendGrowth);
+  const hasDividendGrowthField=rawDividendGrowth!==undefined;
+  const dividendGrowth=parseMaybePct(rawDividendGrowth,false);
   const fcfGrowth=parseMaybePct(prop(p,SHEET_POSITION_FIELDS.fcfGrowth),false);
   const assetClass=prop(p,SHEET_POSITION_FIELDS.assetClass) || "";
   const sourceSheet=prop(p,SHEET_POSITION_FIELDS.sourceSheet) || "";
   const isCrypto=/\b(krypto|crypto)\b/i.test([assetClass,sourceSheet,p.broker].filter(Boolean).join(" "));
-  const expectedGrowth=dividendGrowth ?? parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false) ?? (isCrypto?0:defaultExpectedGrowth(p.name));
+  const fallbackGrowth=parseMaybePct(p.expected_growth,false) ?? parseMaybePct(p.growth,false);
+  const expectedGrowth=dividendGrowth ?? fallbackGrowth ?? (hasDividendGrowthField?null:(isCrypto?0:defaultExpectedGrowth(p.name)));
   return {...p,
     source: p.source || source,
     source_key: p.source_key || "",
@@ -497,6 +500,7 @@ function mapSheetPosition(p,source="manual"){
     source_sheet: sourceSheet || p.source_sheet || "",
     fundamental_growth: fundamentalGrowth,
     expected_dividend_growth: dividendGrowth,
+    dividend_growth_explicit_na: hasDividendGrowthField&&dividendGrowth===null,
     fcf_share_growth: fcfGrowth,
     expected_growth: expectedGrowth
   };
@@ -630,17 +634,27 @@ function normalizeGrowthKpis(raw){
 }
 function extractPortfolioGrowthKpis(data){
   const candidates=[data,data?.portfolio_kpis,data?.growth_kpis,data?.dashboard,data?.metrics,data?.portfolio_metrics];
+  const merged={fundamental_growth:null,dividend_growth:null,fundamental_growth_coverage:null,dividend_growth_coverage:null};
+  let hasAny=false;
   for(const c of candidates){
     const kpis=normalizeGrowthKpis(c);
-    if(kpis)return kpis;
+    if(!kpis)continue;
+    for(const key of Object.keys(merged)){
+      if(merged[key]===null&&kpis[key]!==null&&kpis[key]!==undefined){
+        merged[key]=kpis[key];
+        hasAny=true;
+      }
+    }
   }
-  return null;
+  return hasAny?merged:null;
 }
 function mapSyncPayload(data){
   const growthKpis=extractPortfolioGrowthKpis(data);
-  const incoming=(data?.positions||[]).map(p=>mapSheetPosition({...p,source:"sheet"},"sheet"));
+  const hasCash=Object.prototype.hasOwnProperty.call(data||{},"cash_total");
+  const cashValue=hasCash&&data.cash_total!==null&&data.cash_total!==""?Number(data.cash_total):NaN;
+  const incoming=Array.isArray(data?.positions)?data.positions.map(p=>mapSheetPosition({...p,source:"sheet"},"sheet")):null;
   return {
-    cashTotal:Number.isFinite(Number(data?.cash_total))?Number(data.cash_total):null,
+    cashTotal:Number.isFinite(cashValue)?cashValue:null,
     meta:Array.isArray(data?.meta)?data.meta:null,
     history:Array.isArray(data?.history)?data.history:null,
     growthKpis,
@@ -677,22 +691,40 @@ function mapWatchlistItem(row){
     note:String(prop(row,["note","kommentar","Kommentar"])||"").trim()
   };
 }
-function hasDirectDividendGrowth(){
-  return positions.some(p=>(+p.annual_div||0)>0&&parseMaybePct(p.expected_dividend_growth,false)!==null);
+function dividendGrowthValue(p){
+  const sheet=parseMaybePct(p.expected_dividend_growth,false);
+  if(sheet!==null)return {value:sheet,source:"Sheet"};
+  const fallback=parseMaybePct(p.expected_growth,false);
+  if(fallback!==null)return {value:fallback,source:"Fallback"};
+  return {value:null,source:"N/A"};
 }
-function effectiveDividendGrowth(p,useDirect=hasDirectDividendGrowth()){
-  return parseMaybePct(useDirect?p.expected_dividend_growth:p.expected_growth,false);
+function effectiveDividendGrowth(p){
+  return dividendGrowthValue(p).value;
+}
+function calcDividendGrowth(){
+  let weighted=0,eligibleWeight=0,totalWeight=0;
+  for(const p of positions){
+    const weight=+p.annual_div||0;
+    if(weight<=0)continue;
+    totalWeight+=weight;
+    const value=effectiveDividendGrowth(p);
+    if(value===null)continue;
+    weighted+=weight*value;
+    eligibleWeight+=weight;
+  }
+  return {
+    value:eligibleWeight?weighted/eligibleWeight:null,
+    coverage:totalWeight?eligibleWeight/totalWeight*100:null
+  };
 }
 function growthTotals(){
   const fromPositionsFundamental=calcWeightedGrowth("fundamental_growth","value",false);
-  const fromPositionsDividend=calcWeightedGrowth("expected_dividend_growth","annual_div",false);
-  const legacyDividend=calcWeightedGrowth("expected_growth","annual_div",false);
-  const effectivePositionsDividend=fromPositionsDividend.value!==null?fromPositionsDividend:legacyDividend;
+  const fromPositionsDividend=calcDividendGrowth();
   return {
     fundamentalGrowth:portfolioGrowthKpis?.fundamental_growth ?? fromPositionsFundamental.value,
     fundamentalCoverage:portfolioGrowthKpis?.fundamental_growth_coverage ?? fromPositionsFundamental.coverage,
-    dividendGrowth:portfolioGrowthKpis?.dividend_growth ?? effectivePositionsDividend.value,
-    dividendGrowthCoverage:portfolioGrowthKpis?.dividend_growth_coverage ?? effectivePositionsDividend.coverage
+    dividendGrowth:portfolioGrowthKpis?.dividend_growth ?? fromPositionsDividend.value,
+    dividendGrowthCoverage:portfolioGrowthKpis?.dividend_growth_coverage ?? fromPositionsDividend.coverage
   };
 }
 
@@ -721,18 +753,19 @@ function aggregate(){
   const m=new Map();
   for(const p of positions){
     const key=(p.name||"Unbenannt").trim().toLowerCase();
-    if(!m.has(key))m.set(key,{name:p.name||"Unbenannt",brokers:new Set(),shares:0,value:0,div:0,growthWeight:0,monthly:0});
+    if(!m.has(key))m.set(key,{name:p.name||"Unbenannt",brokers:new Set(),shares:0,value:0,div:0,growthWeight:0,growthEligible:0,monthly:0});
     const a=m.get(key);
     a.brokers.add(p.broker||"–");a.shares+=(+p.shares||0);a.value+=(+p.value||0);a.div+=(+p.annual_div||0);
-    a.growthWeight+=(+p.annual_div||0)*(+p.expected_growth||0);a.monthly+=(+p.monthly||0);
+    const dividendGrowth=effectiveDividendGrowth(p),dividend=+p.annual_div||0;
+    if(dividend>0&&dividendGrowth!==null){a.growthWeight+=dividend*dividendGrowth;a.growthEligible+=dividend}
+    a.monthly+=(+p.monthly||0);
   }
-  return [...m.values()].map(a=>({...a,brokers:[...a.brokers].join(", "),yield:a.value?a.div/a.value*100:0,expected_growth:a.div?a.growthWeight/a.div:0}))
+  return [...m.values()].map(a=>({...a,brokers:[...a.brokers].join(", "),yield:a.value?a.div/a.value*100:0,expected_growth:a.growthEligible?a.growthWeight/a.growthEligible:null}))
     .sort((a,b)=>b.value-a.value);
 }
 
 function growthPositionRows(){
   const grouped=new Map();
-  const useDirectDividend=hasDirectDividendGrowth();
   let totalInvested=0;
   for(const p of positions){
     const value=Math.max(0,+p.value||0),dividend=Math.max(0,+p.annual_div||0);
@@ -745,7 +778,7 @@ function growthPositionRows(){
     if(metric)row.metrics.add(metric);
     const fundamental=parseMaybePct(p.fundamental_growth,false);
     if(fundamental!==null&&value>0){row.fundamentalWeight+=value;row.fundamentalWeighted+=value*fundamental}
-    const dividendGrowth=effectiveDividendGrowth(p,useDirectDividend);
+    const dividendGrowth=effectiveDividendGrowth(p);
     if(dividendGrowth!==null&&dividend>0){row.dividendWeight+=dividend;row.dividendWeighted+=dividend*dividendGrowth}
     const fcfGrowth=parseMaybePct(p.fcf_share_growth,false);
     if(fcfGrowth!==null&&value>0){row.fcfWeight+=value;row.fcfWeighted+=value*fcfGrowth}
@@ -783,19 +816,19 @@ function renderContributionBars(id,rows,valueField="contribution",limit=10){
   el.innerHTML=valid.map(row=>{const value=Number(row[valueField]);return `<div class="contribution-row asset-row" data-asset="${encodeURIComponent(row.name)}" title="${esc(row.name)} Details öffnen"><div class="contribution-name"><b>${esc(row.name)}</b><div class="tiny">${row.rateLabel?esc(row.rateLabel):""}</div></div><div class="contribution-track"><span class="contribution-fill${value<0?" negative":""}" style="width:${Math.max(2,Math.abs(value)/max*100)}%"></span></div><div class="contribution-value ${value>0?"good":value<0?"bad":""}">${value>0?"+":""}${num(value,2)} Pkt.</div></div>`}).join("");
 }
 function dividendGrowthRows(){
-  const grouped=new Map(),useDirect=hasDirectDividendGrowth();let totalDividend=0;
+  const grouped=new Map();let totalDividend=0;
   for(const p of positions){
     const dividend=Math.max(0,+p.annual_div||0);if(dividend<=0)continue;
     totalDividend+=dividend;
     const key=normName(p.name)||"unbenannt";
-    if(!grouped.has(key))grouped.set(key,{name:p.name||"Unbenannt",brokers:new Set(),value:0,dividend:0,growthWeight:0,growthWeighted:0});
+    if(!grouped.has(key))grouped.set(key,{name:p.name||"Unbenannt",brokers:new Set(),sources:new Set(),value:0,dividend:0,growthWeight:0,growthWeighted:0});
     const row=grouped.get(key);row.brokers.add(p.broker||"–");row.value+=Math.max(0,+p.value||0);row.dividend+=dividend;
-    const growth=effectiveDividendGrowth(p,useDirect);
-    if(growth!==null){row.growthWeight+=dividend;row.growthWeighted+=dividend*growth}
+    const growth=dividendGrowthValue(p);
+    if(growth.value!==null){row.growthWeight+=dividend;row.growthWeighted+=dividend*growth.value;row.sources.add(growth.source)}
   }
   return [...grouped.values()].map(row=>{
     const dividendGrowth=row.growthWeight?row.growthWeighted/row.growthWeight:null,dividendShare=totalDividend?row.dividend/totalDividend*100:0;
-    const coveredDividendShare=totalDividend?row.growthWeight/totalDividend*100:0,source=dividendGrowth===null?"N/A":useDirect?"Sheet":"Fallback";
+    const coveredDividendShare=totalDividend?row.growthWeight/totalDividend*100:0,source=dividendGrowth===null?"N/A":[...row.sources].join(" + ");
     return {...row,brokers:[...row.brokers].join(", "),dividendGrowth,dividendShare,coveredDividendShare,yield:row.value?row.dividend/row.value*100:0,source,contribution:dividendGrowth===null?null:dividendGrowth*coveredDividendShare/100,rateLabel:dividendGrowth===null?"":`${pct(dividendGrowth,1)} Growth · ${pct(coveredDividendShare,1)} abgedeckter Div.-Anteil`};
   }).sort((a,b)=>(b.contribution??-Infinity)-(a.contribution??-Infinity)||b.dividend-a.dividend);
 }
@@ -1130,9 +1163,8 @@ function openAssetDetail(name){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function positionDividendGrowthCell(p){
-  const useDirect=hasDirectDividendGrowth(),value=effectiveDividendGrowth(p,useDirect);
-  const source=value===null?"N/A":useDirect?"Sheet":"Fallback";
-  return `${growthCell(value)}<div class="tiny">${source}</div>`;
+  const growth=dividendGrowthValue(p);
+  return `${growthCell(growth.value)}<div class="tiny">${growth.source}</div>`;
 }
 function assetDetailHeroHtml(agg,t,items,meta){
   return `
@@ -1413,7 +1445,7 @@ function clearAllocationTargets(){if(!confirm("Zielallokation für diese Ebene l
 
 function renderGrowthDiagnostics(){
   const t=totals(),growthData=growthPositionRows(),dividendRows=dividendGrowthRows(),allGrowthRows=[...growthData.ranked,...growthData.unrated];
-  const directDividendNames=new Set(positions.filter(p=>(+p.annual_div||0)>0&&parseMaybePct(p.expected_dividend_growth,false)!==null).map(p=>normName(p.name)));
+  const directDividendNames=new Set(positions.filter(p=>(+p.annual_div||0)>0&&dividendGrowthValue(p).source==="Sheet").map(p=>normName(p.name)));
   const fallbackRows=dividendRows.filter(row=>String(row.source).includes("Fallback"));
   const hasFundKpi=portfolioGrowthKpis?.fundamental_growth!==null&&portfolioGrowthKpis?.fundamental_growth!==undefined;
   const hasDivKpi=portfolioGrowthKpis?.dividend_growth!==null&&portfolioGrowthKpis?.dividend_growth!==undefined;
@@ -1481,7 +1513,7 @@ function renderBrokerBars(){
   setHtml("brokerBars",brokers.map(([b,v])=>`<div class="rowbar clickable" data-action="open-broker-data" data-value="${esc(encodeURIComponent(b))}" title="${esc(b)} bearbeiten"><div>${esc(b)}</div><div class="bar"><span style="width:${Math.max(1,v/max*100)}%"></span></div><div style="text-align:right">${euro(v)}</div></div>`).join(""));
 }
 function portfolioOverviewRow(a,t){
-  return `<tr class="asset-row" data-asset="${encodeURIComponent(a.name)}" title="${esc(a.name)} Details öffnen"><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${num(a.shares)}</td><td>${euro(a.value)}</td><td>${euro(a.div,2)}</td><td>${pct(a.yield)}</td><td>${pct(a.expected_growth,1)}</td><td>${pct(t.value?a.value/t.value*100:0,1)}</td></tr>`;
+  return `<tr class="asset-row" data-asset="${encodeURIComponent(a.name)}" title="${esc(a.name)} Details öffnen"><td><b>${esc(a.name)}</b></td><td>${esc(a.brokers)}</td><td>${num(a.shares)}</td><td>${euro(a.value)}</td><td>${euro(a.div,2)}</td><td>${pct(a.yield)}</td><td>${growthCell(a.expected_growth)}</td><td>${pct(t.value?a.value/t.value*100:0,1)}</td></tr>`;
 }
 function renderPortfolioOverviewTable(agg,t){
   setHtml("portfolioBody",agg.map(a=>portfolioOverviewRow(a,t)).join(""));
@@ -1552,7 +1584,7 @@ function dataPositionRow({p,i}){
   return `<tr>
     <td>${dataPositionCell(p)}</td>
     <td>${esc(p.broker)}</td><td><span class="pill">${isSheet?"Sheet":"Manuell"}</span></td>
-    <td>${num(p.shares)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${pct(p.expected_growth,1)}</td><td>${euro(p.monthly)}</td>
+    <td>${num(p.shares)}</td><td>${euro(p.value)}</td><td>${euro(p.annual_div,2)}</td><td>${growthCell(p.expected_growth)}</td><td>${euro(p.monthly)}</td>
     <td>${dataRowActions(p,i)}</td></tr>`;
 }
 function renderData(){
@@ -1873,8 +1905,8 @@ document.getElementById("rCancelBtn").addEventListener("click",clearPropertyForm
 
 function createBackup(){
   return {
-    schemaVersion:16,
-    appVersion:"16.0",
+    schemaVersion:17,
+    appVersion:"17.0",
     exportedAt:new Date().toISOString(),
     positions,
     properties,
@@ -1940,7 +1972,7 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(createBackup(),null,2)],{type:"application/json"});
   const link=document.createElement("a");
   link.href=URL.createObjectURL(blob);
-  link.download="portfolio-os-v14-backup.json";
+  link.download="portfolio-os-v17-backup.json";
   link.click();
   setTimeout(()=>URL.revokeObjectURL(link.href),0);
 });
@@ -1958,7 +1990,12 @@ document.getElementById("importFile").addEventListener("change",async e=>{
 document.getElementById("saveSyncBtn").addEventListener("click",saveSyncSettings);
 document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSettings();syncFromSheet(false)});
 
-document.getElementById("resetBtn").addEventListener("click",()=>{if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;watchlist=[];localStorage.removeItem(GROWTH_KPI_KEY);localStorage.removeItem(PROJECTION_SAVINGS_KEY);localStorage.removeItem(WATCHLIST_KEY);persist();clearForm();clearPropertyForm();clearGoalForm();render()});
+document.getElementById("resetBtn").addEventListener("click",()=>{
+  if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;
+  positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;watchlist=[];portfolioMeta=[];portfolioHistory=[];
+  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
+  persist();loadCashEditor();clearForm();clearPropertyForm();clearGoalForm();render();renderHealth();
+});
 
 function loadSyncSettings(){
   document.getElementById("syncUrl").value=localStorage.getItem(SYNC_URL_KEY)||"";
@@ -1992,6 +2029,7 @@ function jsonp(url, timeoutMs=15000){
     document.head.appendChild(s);
   });
 }
+let syncInFlight=false;
 async function syncFromSheet(isAuto=false){
   const base=(localStorage.getItem(SYNC_URL_KEY)||document.getElementById("syncUrl")?.value||"").trim();
   const secret=(localStorage.getItem(SYNC_SECRET_KEY)||document.getElementById("syncSecret")?.value||DEFAULT_SYNC_SECRET).trim();
@@ -1999,6 +2037,11 @@ async function syncFromSheet(isAuto=false){
     if(!isAuto)setSyncStatus("Bitte zuerst die Apps-Script-Web-App-URL eintragen.","warn");
     return;
   }
+  if(syncInFlight){
+    if(!isAuto)setSyncStatus("Sync läuft bereits. Bitte kurz warten.","warn");
+    return;
+  }
+  syncInFlight=true;
   try{
     setSyncStatus("Synchronisiere Google Sheet …");
     const sep=base.includes("?")?"&":"?";
@@ -2010,6 +2053,12 @@ async function syncFromSheet(isAuto=false){
     const data=await jsonp(syncUrl,45000);
     if(!data||!data.ok)throw new Error(data?.error||"Unbekannter Sync-Fehler");
     const mapped=mapSyncPayload(data);
+    if(!Array.isArray(mapped.positions)){
+      throw new Error("Sync-Payload enthält keine positions-Liste. Bestehende Sheet-Positionen bleiben unverändert.");
+    }
+    if(mapped.positions.length===0&&positions.some(p=>p.source==="sheet")&&!data.allow_empty_positions){
+      throw new Error("Sync-Payload enthält 0 Sheet-Positionen. Bestehende Sheet-Positionen bleiben unverändert.");
+    }
     if(mapped.cashTotal!==null){
       localStorage.setItem(CASH_TOTAL_KEY,String(mapped.cashTotal));
       loadCashEditor();
@@ -2024,7 +2073,7 @@ async function syncFromSheet(isAuto=false){
     let incoming=mapped.positions.map(p=>{
       const ov=growthOverrides[growthKey(p)];
       const sheetDividendGrowth=parseMaybePct(p.expected_dividend_growth,false);
-      p.expected_growth=sheetDividendGrowth ?? parseMaybePct(ov,false) ?? parseMaybePct(p.expected_growth,false) ?? defaultExpectedGrowth(p.name);
+      p.expected_growth=sheetDividendGrowth ?? parseMaybePct(ov,false) ?? parseMaybePct(p.expected_growth,false) ?? (p.dividend_growth_explicit_na?null:defaultExpectedGrowth(p.name));
       return p;
     });
     incoming=applyLocalFallback(incoming);
@@ -2046,6 +2095,8 @@ async function syncFromSheet(isAuto=false){
     setSyncStatus(`Letzter Sync: ${stamp} · ${incoming.length} Sheet-Positionen${warningCount?` · ⚠ ${warningCount} Hinweise`:""}`,"good");
   }catch(err){
     setSyncStatus("Sync fehlgeschlagen: "+String(err.message||err),"bad");
+  }finally{
+    syncInFlight=false;
   }
 }
 

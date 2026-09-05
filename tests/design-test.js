@@ -75,10 +75,16 @@ for (const button of loaded.navigation) {
 if (process.argv[2]) {
   const baseline = execFileSync("git", ["show", `${process.argv[2]}:index.html`], { cwd: root, encoding: "utf8", maxBuffer: 2 * 1024 * 1024 });
   const original = appContext(baseline, demo);
-  const presentationFunctions = new Set(["switchView", "renderDividendProjection", "renderForecast", "renderHistory"]);
+  const intentionallyChangedFunctions = new Set([
+    "switchView", "renderDividendProjection", "renderForecast", "renderHistory",
+    "mapSheetPosition", "extractPortfolioGrowthKpis", "mapSyncPayload",
+    "hasDirectDividendGrowth", "effectiveDividendGrowth", "growthTotals", "aggregate", "growthPositionRows",
+    "dividendGrowthRows", "positionDividendGrowthCell", "renderGrowthDiagnostics",
+    "portfolioOverviewRow", "dataPositionRow", "createBackup", "syncFromSheet"
+  ]);
   let compared = 0;
   for (const [name, value] of Object.entries(original.context)) {
-    if (typeof value !== "function" || presentationFunctions.has(name)) continue;
+    if (typeof value !== "function" || intentionallyChangedFunctions.has(name)) continue;
     assert.equal(loaded.context[name]?.toString(), value.toString(), `${name} must remain unchanged`);
     compared++;
   }

@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v28-premium-design`;
+const CACHE = `${CACHE_PREFIX}v29-maintenance-fixes`;
 const ASSETS = [
   "./index.html",
   "./styles.css?v=28",
