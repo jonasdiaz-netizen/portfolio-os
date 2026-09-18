@@ -384,7 +384,7 @@ if (appsScript) {
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
 check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
-check("service worker cache version bumped", sw.includes("v31-cash-interest"));
+check("service worker cache version bumped", sw.includes("v32-sync-endpoint-v16"));
 const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
 check("shared stylesheet is linked", stylesheetHref === "styles.css?v=29");
 check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));

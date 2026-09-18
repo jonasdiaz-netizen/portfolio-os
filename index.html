@@ -453,6 +453,10 @@ const GROWTH_KPI_KEY = "portfolio_os_v12_growth_kpis";
 const PROJECTION_SAVINGS_KEY = "portfolio_os_v13_projection_savings";
 const WATCHLIST_KEY = "portfolio_os_v16_watchlist";
 const CASH_INTEREST_RATE = 2.6;
+const DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycby_N469BXaI4Xvn0Z8kwXAlMVcj__5o5tTcb9pKKrJwNszASoaHpeRk9fglg_A0QggB/exec";
+const LEGACY_SYNC_DEPLOYMENT_IDS = new Set([
+  "AKfycbzNXLVtvEJe8Av-lNlGwSIXbFMFiHdaruIo0_akszEXIkJh2nwh5dcWjAiJuJcoUsP"
+]);
 const DEFAULT_SYNC_SECRET = "";
 const SHEET_POSITION_FIELDS = {
   fundamentalGrowth: [
@@ -2168,7 +2172,13 @@ document.getElementById("resetBtn").addEventListener("click",()=>{
 });
 
 function loadSyncSettings(){
-  document.getElementById("syncUrl").value=localStorage.getItem(SYNC_URL_KEY)||"";
+  let syncUrl=(localStorage.getItem(SYNC_URL_KEY)||"").trim();
+  const deploymentId=syncUrl.match(/\/macros\/s\/([^/]+)\/exec/)?.[1]||"";
+  if(!syncUrl || LEGACY_SYNC_DEPLOYMENT_IDS.has(deploymentId)){
+    syncUrl=DEFAULT_SYNC_URL;
+    localStorage.setItem(SYNC_URL_KEY,syncUrl);
+  }
+  document.getElementById("syncUrl").value=syncUrl;
   document.getElementById("syncSecret").value=localStorage.getItem(SYNC_SECRET_KEY)||DEFAULT_SYNC_SECRET;
 }
 function saveSyncSettings(){

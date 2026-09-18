@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v31-cash-interest`;
+const CACHE = `${CACHE_PREFIX}v32-sync-endpoint-v16`;
 const ASSETS = [
   "./index.html",
   "./styles.css?v=29",
