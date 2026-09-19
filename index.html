@@ -214,7 +214,7 @@
     </div>
 
     <div class="card" style="margin-top:12px">
-      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Jahr 1-5 mit aktueller Sparplanlogik; danach konservativ mit 1.500 €/Monat, 5% Dividend Growth und Reinvestition. Cash-Zins bleibt bei 2,6% p.a. konstant.</div></div><span class="pill">1-20 Jahre</span></div>
+      <div class="split"><div><h2>Forward-Dividende</h2><div class="sub">Jahr 1-5 mit aktueller Sparplanlogik; danach konservativ mit 1.500 €/Monat, 5% Dividend Growth und Reinvestition. Cash-Zins kommt variabel aus dem Cash-Reiter.</div></div><span class="pill">1-20 Jahre</span></div>
       <div id="dividendProjection"></div>
     </div>
 
@@ -444,6 +444,7 @@ const OVERRIDE_KEY = "portfolio_os_v4_growth_overrides";
 const SYNC_URL_KEY = "portfolio_os_v4_sync_url";
 const SYNC_SECRET_KEY = "portfolio_os_v4_sync_secret";
 const CASH_TOTAL_KEY = "portfolio_os_v5_cash_total";
+const CASH_INTEREST_KEY = "portfolio_os_v18_cash_interest_annual";
 const HEALTH_KEY = "portfolio_os_v9_health";
 const META_KEY = "portfolio_os_v10_meta";
 const HISTORY_KEY = "portfolio_os_v10_history";
@@ -452,11 +453,7 @@ const ALLOCATION_KEY = "portfolio_os_v11_allocation";
 const GROWTH_KPI_KEY = "portfolio_os_v12_growth_kpis";
 const PROJECTION_SAVINGS_KEY = "portfolio_os_v13_projection_savings";
 const WATCHLIST_KEY = "portfolio_os_v16_watchlist";
-const CASH_INTEREST_RATE = 2.6;
-const DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycby_N469BXaI4Xvn0Z8kwXAlMVcj__5o5tTcb9pKKrJwNszASoaHpeRk9fglg_A0QggB/exec";
-const LEGACY_SYNC_DEPLOYMENT_IDS = new Set([
-  "AKfycbzNXLVtvEJe8Av-lNlGwSIXbFMFiHdaruIo0_akszEXIkJh2nwh5dcWjAiJuJcoUsP"
-]);
+const CASH_INTEREST_FALLBACK_RATE = 2.6;
 const DEFAULT_SYNC_SECRET = "";
 const SHEET_POSITION_FIELDS = {
   fundamentalGrowth: [
@@ -628,7 +625,12 @@ function getCashTotal(){
   return Number.isFinite(n)?n:0;
 }
 function cashInterestAnnual(cash=getCashTotal()){
-  return Math.max(0,Number(cash)||0)*CASH_INTEREST_RATE/100;
+  const synced=localStorage.getItem(CASH_INTEREST_KEY);
+  if(synced!==null&&synced!==""){
+    const n=Number(synced);
+    if(Number.isFinite(n))return Math.max(0,n);
+  }
+  return Math.max(0,Number(cash)||0)*CASH_INTEREST_FALLBACK_RATE/100;
 }
 function getProjectionMonthlySavings(){
   const raw=localStorage.getItem(PROJECTION_SAVINGS_KEY);
@@ -655,6 +657,15 @@ function money(value,currency="EUR",dec=2){
   if(!Number.isFinite(Number(value)))return "–";
   if(cur==="GBp")return `${num(value,dec)} GBp`;
   return `${num(value,dec)} ${cur}`;
+}
+function isCashLikePosition(p){
+  return /\bcash\b/i.test([
+    p?.name,
+    p?.broker,
+    p?.category,
+    p?.asset_class,
+    p?.sector
+  ].filter(Boolean).join(" "));
 }
 function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value}
 function setHtml(id,value){const el=document.getElementById(id);if(el)el.innerHTML=value}
@@ -726,9 +737,16 @@ function mapSyncPayload(data){
   const growthKpis=extractPortfolioGrowthKpis(data);
   const hasCash=Object.prototype.hasOwnProperty.call(data||{},"cash_total");
   const cashValue=hasCash&&data.cash_total!==null&&data.cash_total!==""?Number(data.cash_total):NaN;
-  const incoming=Array.isArray(data?.positions)?data.positions.map(p=>mapSheetPosition({...p,source:"sheet"},"sheet")):null;
+  const cashInterestRaw=Object.prototype.hasOwnProperty.call(data||{},"cash_interest_annual")
+    ?data.cash_interest_annual
+    :data?.cash_components?.interest_annual;
+  const cashInterestValue=cashInterestRaw!==null&&cashInterestRaw!==undefined&&cashInterestRaw!==""?Number(cashInterestRaw):NaN;
+  const incoming=Array.isArray(data?.positions)
+    ?data.positions.map(p=>mapSheetPosition({...p,source:"sheet"},"sheet")).filter(p=>!isCashLikePosition(p))
+    :null;
   return {
     cashTotal:Number.isFinite(cashValue)?cashValue:null,
+    cashInterestAnnual:Number.isFinite(cashInterestValue)?cashInterestValue:null,
     meta:Array.isArray(data?.meta)?data.meta:null,
     history:Array.isArray(data?.history)?data.history:null,
     growthKpis,
@@ -948,14 +966,15 @@ function renderGrowth(){
 }
 function renderDividends(){
   const t=totals(),rows=dividendGrowthRows(),drivers=rows.filter(row=>row.contribution!==null&&Number.isFinite(Number(row.contribution)));
-  document.getElementById("dAnnual").textContent=euro(t.div);document.getElementById("dAnnualSub").textContent=t.cashInterest?`inkl. ${euro(t.cashInterest,2)} Cash-Zins p.a. (${pct(CASH_INTEREST_RATE,1)})`:"";document.getElementById("dMonthly").textContent=euro(t.div/12);document.getElementById("dYield").textContent=pct(t.yield);document.getElementById("dYieldSub").textContent="Ertrag ÷ Financial Assets";document.getElementById("dGrowth").textContent=pctMaybe(t.expGrowth,1);document.getElementById("dGrowthCoverage").textContent=pctMaybe(t.dividendGrowthCoverage,1);
+  const cashRate=t.cash>0&&t.cashInterest?pct(t.cashInterest/t.cash*100,1):"variabel";
+  document.getElementById("dAnnual").textContent=euro(t.div);document.getElementById("dAnnualSub").textContent=t.cashInterest?`inkl. ${euro(t.cashInterest,2)} Cash-Zins p.a. (${cashRate})`:"";document.getElementById("dMonthly").textContent=euro(t.div/12);document.getElementById("dYield").textContent=pct(t.yield);document.getElementById("dYieldSub").textContent="Ertrag ÷ Financial Assets";document.getElementById("dGrowth").textContent=pctMaybe(t.expGrowth,1);document.getElementById("dGrowthCoverage").textContent=pctMaybe(t.dividendGrowthCoverage,1);
   document.getElementById("divGrowthCount").textContent=`${drivers.length} Treiber`;
   const top=drivers[0]||null,coveredContribution=drivers.reduce((sum,row)=>sum+row.contribution,0);
   document.getElementById("divGrowthSummary").textContent=top?`${top.name} ist aktuell der größte Treiber. Abgedeckter Beitrag zur Gesamtdividende: ${coveredContribution>=0?"+":""}${num(coveredContribution,2)} Prozentpunkte; der KPI wird innerhalb der Coverage normiert.`:"Welche Positionen das erwartete Wachstum deiner Jahresdividende am stärksten treiben.";
   renderContributionBars("divGrowthContributionBars",drivers);
   renderDividendProjection(t);
   const positionRows=rows.map(row=>`<tr class="asset-row" data-asset="${encodeURIComponent(row.name)}"><td><b>${esc(row.name)}</b></td><td>${esc(row.brokers)}</td><td>${euro(row.dividend,2)}</td><td>${pct(t.div?row.dividend/t.div*100:0,1)}</td><td>${pct(row.yield)}</td><td>${growthCell(row.dividendGrowth)}</td><td>${contributionCell(row.contribution)}</td><td>${growthSourceBadge(row.source)}</td></tr>`).join("");
-  const cashRow=t.cashInterest?`<tr><td><b>Cash-Zins</b></td><td>Cash</td><td>${euro(t.cashInterest,2)}</td><td>${pct(t.cashInterest/t.div*100,1)}</td><td>${pct(CASH_INTEREST_RATE,1)}</td><td>${naBadge()}</td><td>–</td><td><span class="data-badge">Konstant</span></td></tr>`:"";
+  const cashRow=t.cashInterest?`<tr><td><b>Cash-Zins</b></td><td>Cash</td><td>${euro(t.cashInterest,2)}</td><td>${pct(t.cashInterest/t.div*100,1)}</td><td>${cashRate}</td><td>${naBadge()}</td><td>–</td><td><span class="data-badge">Variabel je Cash-Position</span></td></tr>`:"";
   document.getElementById("divBody").innerHTML=positionRows+cashRow||'<tr><td colspan="8" class="empty-state">Noch keine Dividendenzahler vorhanden.</td></tr>';
 }
 function renderDividendProjection(t=totals()){
@@ -2085,6 +2104,7 @@ function createBackup(){
     positions,
     properties,
     cashTotal:getCashTotal(),
+    cashInterestAnnual:cashInterestAnnual(),
     projectionMonthlySavings:getProjectionMonthlySavings(),
     growthOverrides,
     goals,
@@ -2112,6 +2132,9 @@ function restoreBackup(backup){
 
   if(Object.prototype.hasOwnProperty.call(backup,"cashTotal")){
     localStorage.setItem(CASH_TOTAL_KEY,String(Math.max(0,finiteOr(backup.cashTotal,0))));
+  }
+  if(Object.prototype.hasOwnProperty.call(backup,"cashInterestAnnual")){
+    localStorage.setItem(CASH_INTEREST_KEY,String(Math.max(0,finiteOr(backup.cashInterestAnnual,0))));
   }
   if(Object.prototype.hasOwnProperty.call(backup,"projectionMonthlySavings")){
     localStorage.setItem(PROJECTION_SAVINGS_KEY,String(Math.max(0,finiteOr(backup.projectionMonthlySavings,0))));
@@ -2167,18 +2190,12 @@ document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSett
 document.getElementById("resetBtn").addEventListener("click",()=>{
   if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;
   positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;watchlist=[];portfolioMeta=[];portfolioHistory=[];
-  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
+  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,CASH_INTEREST_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
   persist();loadCashEditor();clearForm();clearPropertyForm();clearGoalForm();render();renderHealth();
 });
 
 function loadSyncSettings(){
-  let syncUrl=(localStorage.getItem(SYNC_URL_KEY)||"").trim();
-  const deploymentId=syncUrl.match(/\/macros\/s\/([^/]+)\/exec/)?.[1]||"";
-  if(!syncUrl || LEGACY_SYNC_DEPLOYMENT_IDS.has(deploymentId)){
-    syncUrl=DEFAULT_SYNC_URL;
-    localStorage.setItem(SYNC_URL_KEY,syncUrl);
-  }
-  document.getElementById("syncUrl").value=syncUrl;
+  document.getElementById("syncUrl").value=localStorage.getItem(SYNC_URL_KEY)||"";
   document.getElementById("syncSecret").value=localStorage.getItem(SYNC_SECRET_KEY)||DEFAULT_SYNC_SECRET;
 }
 function saveSyncSettings(){
@@ -2242,6 +2259,9 @@ async function syncFromSheet(isAuto=false){
     if(mapped.cashTotal!==null){
       localStorage.setItem(CASH_TOTAL_KEY,String(mapped.cashTotal));
       loadCashEditor();
+    }
+    if(mapped.cashInterestAnnual!==null){
+      localStorage.setItem(CASH_INTEREST_KEY,String(mapped.cashInterestAnnual));
     }
     if(mapped.meta){portfolioMeta=mapped.meta;localStorage.setItem(META_KEY,JSON.stringify(portfolioMeta));}
     if(mapped.history){portfolioHistory=mapped.history;localStorage.setItem(HISTORY_KEY,JSON.stringify(portfolioHistory));}
