@@ -736,7 +736,10 @@ function extractPortfolioGrowthKpis(data){
 function mapSyncPayload(data){
   const growthKpis=extractPortfolioGrowthKpis(data);
   const hasCash=Object.prototype.hasOwnProperty.call(data||{},"cash_total");
-  const cashValue=hasCash&&data.cash_total!==null&&data.cash_total!==""?Number(data.cash_total):NaN;
+  const sheetCashRaw=data?.cash_components?.sheet_cash;
+  const sheetCashValue=sheetCashRaw!==null&&sheetCashRaw!==undefined&&sheetCashRaw!==""?Number(sheetCashRaw):NaN;
+  const cashTotalValue=hasCash&&data.cash_total!==null&&data.cash_total!==""?Number(data.cash_total):NaN;
+  const cashValue=Number.isFinite(sheetCashValue)?sheetCashValue:cashTotalValue;
   const cashInterestRaw=Object.prototype.hasOwnProperty.call(data||{},"cash_interest_annual")
     ?data.cash_interest_annual
     :data?.cash_components?.interest_annual;
