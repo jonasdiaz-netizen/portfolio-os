@@ -2252,7 +2252,7 @@ async function syncFromSheet(isAuto=false){
     const manualValue=manualSnapshot.reduce((a,p)=>a+(+p.value||0),0);
     const manualDiv=manualSnapshot.reduce((a,p)=>a+(+p.annual_div||0),0);
     const manualMonthly=manualSnapshot.reduce((a,p)=>a+(+p.monthly||0),0);
-    const syncUrl=base+sep+"secret="+encodeURIComponent(secret)+"&manual_present=1&manual_value="+encodeURIComponent(manualValue)+"&manual_div="+encodeURIComponent(manualDiv)+"&manual_monthly="+encodeURIComponent(manualMonthly);
+    const syncUrl=base+sep+"secret="+encodeURIComponent(secret)+"&manual_present=1&manual_value="+encodeURIComponent(manualValue)+"&manual_div="+encodeURIComponent(manualDiv)+"&manual_monthly="+encodeURIComponent(manualMonthly)+"&health=0&write_history=0&ensure_trigger=0";
     const data=await jsonp(syncUrl,SYNC_TIMEOUT_MS);
     if(!data||!data.ok)throw new Error(data?.error||"Unbekannter Sync-Fehler");
     const mapped=mapSyncPayload(data);
