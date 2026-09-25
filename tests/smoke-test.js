@@ -383,8 +383,8 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("sheet sync timeout allows slower Apps Script responses", html.includes("jsonp(syncUrl,45000)"));
-check("service worker cache version bumped", sw.includes("v32-sync-endpoint-v16"));
+check("sheet sync timeout allows slower Apps Script responses", html.includes("SYNC_TIMEOUT_MS = 90000") && html.includes("jsonp(syncUrl,SYNC_TIMEOUT_MS)"));
+check("service worker cache version bumped", sw.includes("v34-sync-lean-timeout90"));
 const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
 check("shared stylesheet is linked", stylesheetHref === "styles.css?v=29");
 check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));
@@ -433,6 +433,7 @@ check("portfolio KPI extraction merges partial sources", mixedKpis && closeTo(mi
 check("sync rejects missing positions list", html.includes("Sync-Payload enthält keine positions-Liste"));
 check("sync protects existing sheet positions from empty payloads", html.includes("allow_empty_positions"));
 check("sync prevents concurrent requests", html.includes("let syncInFlight=false") && html.includes("Sync läuft bereits"));
+check("auto sync cooldown reduces duplicate backend runs", html.includes("AUTO_SYNC_COOLDOWN_MS = 10 * 60 * 1000") && html.includes("scheduleAutoSync()") && html.includes("LAST_SYNC_TS_KEY"));
 check("null cash_total is ignored", html.includes("data.cash_total!==null") && html.includes("cashTotal:Number.isFinite(cashValue)?cashValue:null"));
 check(
   "cash interest is included as a flat dividend component",
