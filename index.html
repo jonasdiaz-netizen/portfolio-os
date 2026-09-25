@@ -455,6 +455,9 @@ const PROJECTION_SAVINGS_KEY = "portfolio_os_v13_projection_savings";
 const WATCHLIST_KEY = "portfolio_os_v16_watchlist";
 const CASH_INTEREST_FALLBACK_RATE = 2.6;
 const DEFAULT_SYNC_SECRET = "";
+const SYNC_TIMEOUT_MS = 90000;
+const AUTO_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
+const LAST_SYNC_TS_KEY = "portfolio_os_v19_last_sync_ts";
 const SHEET_POSITION_FIELDS = {
   fundamentalGrowth: [
     "fundamental_growth","expected_fundamental_growth","expected_fundamental_growth_3_5y",
@@ -2193,7 +2196,7 @@ document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSett
 document.getElementById("resetBtn").addEventListener("click",()=>{
   if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;
   positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;watchlist=[];portfolioMeta=[];portfolioHistory=[];
-  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,CASH_INTEREST_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
+  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,CASH_INTEREST_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,LAST_SYNC_TS_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
   persist();loadCashEditor();clearForm();clearPropertyForm();clearGoalForm();render();renderHealth();
 });
 
@@ -2212,7 +2215,7 @@ function setSyncStatus(msg, cls=""){
   const mini=document.getElementById("syncMini");
   if(mini)mini.textContent=msg;
 }
-function jsonp(url, timeoutMs=15000){
+function jsonp(url, timeoutMs=SYNC_TIMEOUT_MS){
   return new Promise((resolve,reject)=>{
     const cb="__portfolioSync_"+Date.now()+"_"+Math.floor(Math.random()*1e6);
     const s=document.createElement("script");
@@ -2250,7 +2253,7 @@ async function syncFromSheet(isAuto=false){
     const manualDiv=manualSnapshot.reduce((a,p)=>a+(+p.annual_div||0),0);
     const manualMonthly=manualSnapshot.reduce((a,p)=>a+(+p.monthly||0),0);
     const syncUrl=base+sep+"secret="+encodeURIComponent(secret)+"&manual_present=1&manual_value="+encodeURIComponent(manualValue)+"&manual_div="+encodeURIComponent(manualDiv)+"&manual_monthly="+encodeURIComponent(manualMonthly);
-    const data=await jsonp(syncUrl,45000);
+    const data=await jsonp(syncUrl,SYNC_TIMEOUT_MS);
     if(!data||!data.ok)throw new Error(data?.error||"Unbekannter Sync-Fehler");
     const mapped=mapSyncPayload(data);
     if(!Array.isArray(mapped.positions)){
@@ -2291,16 +2294,30 @@ async function syncFromSheet(isAuto=false){
     const syncDate=new Date(mapped.syncedAt||Date.now());
     const stamp=(Number.isNaN(syncDate.getTime())?new Date():syncDate).toLocaleString("de-DE");
     localStorage.setItem("portfolio_os_v4_last_sync",stamp);
+    localStorage.setItem(LAST_SYNC_TS_KEY,String(Date.now()));
     saveHealth(mapped.health,mapped.warnings);
     persist();render();
 
     const warningCount=Math.max(0,Math.trunc(finiteOr(mapped.health?.error_count,0)))+mapped.warnings.length;
     setSyncStatus(`Letzter Sync: ${stamp} · ${incoming.length} Sheet-Positionen${warningCount?` · ⚠ ${warningCount} Hinweise`:""}`,"good");
   }catch(err){
-    setSyncStatus("Sync fehlgeschlagen: "+String(err.message||err),"bad");
+    const message=String(err.message||err);
+    const hint=message.includes("Timeout")?" · Der Apps-Script-Lauf kann im Hintergrund noch fertig werden; bitte nicht mehrfach starten.":"";
+    setSyncStatus("Sync fehlgeschlagen: "+message+hint,"bad");
   }finally{
     syncInFlight=false;
   }
+}
+
+function scheduleAutoSync(){
+  const lastTs=Number(localStorage.getItem(LAST_SYNC_TS_KEY)||0);
+  const fresh=Number.isFinite(lastTs)&&lastTs>0&&(Date.now()-lastTs)<AUTO_SYNC_COOLDOWN_MS;
+  if(fresh){
+    const lastSync=localStorage.getItem("portfolio_os_v4_last_sync");
+    if(lastSync)setSyncStatus(`Letzter Sync: ${lastSync} · Auto-Sync übersprungen (Daten noch frisch).`,"good");
+    return;
+  }
+  setTimeout(()=>syncFromSheet(true),750);
 }
 
 loadSyncSettings();
@@ -2308,7 +2325,7 @@ loadCashEditor();
 const allocInvestmentEl=document.getElementById("allocInvestment");if(allocInvestmentEl && Number(allocInvestmentEl.value||0)===0)allocInvestmentEl.value=Math.round(totals().monthly||0);
 render();
 renderHealth();
-setTimeout(()=>syncFromSheet(true),250);
+scheduleAutoSync();
 </script>
 
 <script>
