@@ -434,6 +434,7 @@ check("sync rejects missing positions list", html.includes("Sync-Payload enthäl
 check("sync protects existing sheet positions from empty payloads", html.includes("allow_empty_positions"));
 check("sync prevents concurrent requests", html.includes("let syncInFlight=false") && html.includes("Sync läuft bereits"));
 check("auto sync cooldown reduces duplicate backend runs", html.includes("AUTO_SYNC_COOLDOWN_MS = 10 * 60 * 1000") && html.includes("scheduleAutoSync()") && html.includes("LAST_SYNC_TS_KEY"));
+check("default sync requests lean backend path", html.includes("&health=0&write_history=0&ensure_trigger=0"));
 check("null cash_total is ignored", html.includes("data.cash_total!==null") && html.includes("cashTotal:Number.isFinite(cashValue)?cashValue:null"));
 check(
   "cash interest is included as a flat dividend component",
