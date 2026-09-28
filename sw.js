@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v34-sync-lean-timeout90`;
+const CACHE = `${CACHE_PREFIX}v35-sync-timeout180-scii`;
 const ASSETS = [
   "./index.html",
   "./styles.css?v=29",
