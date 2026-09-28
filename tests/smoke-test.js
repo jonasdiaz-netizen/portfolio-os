@@ -383,8 +383,8 @@ if (appsScript) {
   }
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
-check("sheet sync timeout allows slower Apps Script responses", html.includes("SYNC_TIMEOUT_MS = 90000") && html.includes("jsonp(syncUrl,SYNC_TIMEOUT_MS)"));
-check("service worker cache version bumped", sw.includes("v34-sync-lean-timeout90"));
+check("sheet sync timeout allows slower Apps Script responses", html.includes("SYNC_TIMEOUT_MS = 180000") && html.includes("jsonp(syncUrl,SYNC_TIMEOUT_MS)"));
+check("service worker cache version bumped", sw.includes("v35-sync-timeout180-scii"));
 const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
 check("shared stylesheet is linked", stylesheetHref === "styles.css?v=29");
 check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));
