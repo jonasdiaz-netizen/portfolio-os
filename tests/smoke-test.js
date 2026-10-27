@@ -384,9 +384,9 @@ if (appsScript) {
 }
 check("service worker has scoped cache prefix", sw.includes('CACHE_PREFIX = "portfolio-os-shell-"'));
 check("sheet sync timeout allows slower Apps Script responses", html.includes("SYNC_TIMEOUT_MS = 180000") && html.includes("jsonp(syncUrl,SYNC_TIMEOUT_MS)"));
-check("service worker cache version bumped", sw.includes("v35-sync-timeout180-scii"));
+check("service worker cache version bumped", sw.includes("v36-cash-breakdown"));
 const stylesheetHref = html.match(/<link rel="stylesheet" href="([^"]+)"/)?.[1];
-check("shared stylesheet is linked", stylesheetHref === "styles.css?v=29");
+check("shared stylesheet is linked", stylesheetHref === "styles.css?v=30");
 check("stylesheet is precached for offline use", sw.includes(`"./${stylesheetHref}"`));
 check("shared stylesheet exists", fs.existsSync(path.join(root, "styles.css")));
 check("legacy inline theme removed", !html.includes("<style>"));
@@ -439,7 +439,7 @@ check("null cash_total is ignored", html.includes("data.cash_total!==null") && h
 check(
   "cash interest is included as a flat dividend component",
   includesAll(html, [
-    "const CASH_INTEREST_RATE = 2.6;",
+    "const CASH_INTEREST_FALLBACK_RATE = 2.6;",
     "function cashInterestAnnual",
     "portfolioDividend+cashInterest",
     "totalForecastPositions(years,growthOverride,contribScale,reinvest)+cashInterestAnnual()"
