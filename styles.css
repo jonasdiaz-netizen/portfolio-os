@@ -135,6 +135,25 @@ b, strong { font-weight: 600; }
 .overview-stat { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding: 18px; border: 1px solid #2a3546; border-radius: 12px; background: rgba(11, 14, 20, .25); }
 .overview-stat .label { font-size: .8125rem; }
 .overview-stat strong { display: block; font-size: 1.25rem; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.cash-overview-button { width: 100%; color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.cash-overview-button:hover, .cash-overview-button:focus-visible { border-color: var(--good); background: rgba(23, 61, 47, .28); outline-offset: 2px; }
+.cash-card-hint { float: right; color: var(--good); font-size: .6875rem; }
+.cash-details-top { margin-bottom: var(--gap); }
+.cash-details-heading { align-items: flex-start; gap: 16px; }
+.cash-details-heading h2 { margin: 8px 0; }
+.cash-details-total { margin-top: 20px; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 600; letter-spacing: -.035em; }
+.cash-breakdown-track { display: flex; gap: 3px; height: 12px; border-radius: 99px; overflow: hidden; background: var(--line-soft); margin: 18px 0 12px; }
+.cash-breakdown-track span { transition: width .2s; }
+.cash-reserve-segment { background: var(--good); }
+.cash-strategic-segment { background: var(--accent); }
+.cash-bucket { border-top: 3px solid transparent; }
+.cash-bucket.cash-reserve { border-top-color: var(--good); }
+.cash-bucket.cash-strategic { border-top-color: var(--accent); }
+.cash-bucket .metric { margin-top: 12px; }
+.cash-account-list { margin-top: 18px; }
+.cash-account-row { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--line-soft); font-size: .875rem; }
+.cash-account-row span { min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+.cash-account-row strong { flex: 0 0 auto; white-space: nowrap; font-weight: 550; }
 .portfolio-mix { grid-column: 1 / -1; border-top: 1px solid #2a3546; padding-top: 20px; }
 .portfolio-mix .split { align-items: baseline; flex-wrap: wrap; gap: 6px 20px; }
 .portfolio-mix .label, .portfolio-mix .sub { font-size: .75rem; }
