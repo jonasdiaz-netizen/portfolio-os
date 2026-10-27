@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Portfolio OS</title>
-<link rel="stylesheet" href="styles.css?v=29">
+<link rel="stylesheet" href="styles.css?v=30">
 
 <meta name="theme-color" content="#0b0e14">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -54,7 +54,7 @@
         <div class="overview-stat"><div class="label">Financial Assets</div><strong id="mFinancialAssets">–</strong></div>
         <div class="overview-stat"><div class="label">Krypto</div><strong id="mCryptoAssets">–</strong></div>
         <div class="overview-stat"><div class="label">Immobilien-Eigenkapital</div><strong id="mPropertyEquity">–</strong></div>
-        <div class="overview-stat"><div class="label">Cash</div><strong id="mCash">–</strong></div>
+        <button type="button" class="overview-stat cash-overview-button" id="openCashDetails" aria-label="Cash-Aufteilung öffnen"><span class="label">Cash <span class="cash-card-hint">Details ↗</span></span><strong id="mCash">–</strong></button>
       </div>
       <div class="portfolio-mix">
         <div class="split"><span class="label" style="margin:0">Net-Worth-Aufteilung</span><span class="sub" id="mDebtSummary" style="margin:0"></span></div>
@@ -88,6 +88,40 @@
       <div class="split"><div><h2>Portfolio-Historie</h2><div class="sub" id="historySummary">Startet mit dem ersten erfolgreichen Sync.</div></div><div class="history-toolbar"><button class="rangebtn" data-range="1M">1M</button><button class="rangebtn active" data-range="3M">3M</button><button class="rangebtn" data-range="YTD">YTD</button><button class="rangebtn" data-range="1Y">1J</button><button class="rangebtn" data-range="MAX">Max</button></div></div>
       <div class="chartbox" id="historyChart"></div>
       <div class="chart-legend"><span>Financial Assets: <b id="historyLatest">–</b></span><span>Zeitraum: <b id="historyDelta">–</b></span><span>Datenpunkte: <b id="historyCount">0</b></span></div>
+    </div>
+  </section>
+
+  <section id="cashdetails" class="view">
+    <div class="card cash-details-top">
+      <div class="split cash-details-heading">
+        <div>
+          <div class="label">Cash Management</div>
+          <h2>Cash-Aufteilung</h2>
+          <div class="sub">Direkt aus der Cash-Kategorisierung in TrackingV2.</div>
+        </div>
+        <button type="button" class="btn secondary" id="cashBackBtn">← Dashboard</button>
+      </div>
+      <div class="cash-details-total" id="cashDetailsTotal">–</div>
+      <div class="sub">Cash gesamt</div>
+      <div class="cash-breakdown-track" aria-label="Aufteilung von Liquidität und strategischem Cash">
+        <span id="cashReserveBar" class="cash-reserve-segment"></span>
+        <span id="cashStrategicBar" class="cash-strategic-segment"></span>
+      </div>
+      <div class="sub" id="cashDetailStatus">Bitte Google Sheet synchronisieren.</div>
+    </div>
+    <div class="grid2 cash-detail-grid">
+      <div class="card cash-bucket cash-reserve">
+        <div class="label">Liquiditätsreserve</div>
+        <div class="metric" id="cashReserveTotal">–</div>
+        <div class="sub">Giro- und Reservekonten</div>
+        <div class="cash-account-list" id="cashReserveAccounts"></div>
+      </div>
+      <div class="card cash-bucket cash-strategic">
+        <div class="label">Strategisches Cash</div>
+        <div class="metric" id="cashStrategicTotal">–</div>
+        <div class="sub">Für gezielte Investments und Marktchancen</div>
+        <div class="cash-account-list" id="cashStrategicAccounts"></div>
+      </div>
     </div>
   </section>
 
@@ -445,6 +479,7 @@ const SYNC_URL_KEY = "portfolio_os_v4_sync_url";
 const SYNC_SECRET_KEY = "portfolio_os_v4_sync_secret";
 const CASH_TOTAL_KEY = "portfolio_os_v5_cash_total";
 const CASH_INTEREST_KEY = "portfolio_os_v18_cash_interest_annual";
+const CASH_BREAKDOWN_KEY = "portfolio_os_v20_cash_breakdown";
 const HEALTH_KEY = "portfolio_os_v9_health";
 const META_KEY = "portfolio_os_v10_meta";
 const HISTORY_KEY = "portfolio_os_v10_history";
@@ -627,6 +662,22 @@ function getCashTotal(){
   const n=Number(raw);
   return Number.isFinite(n)?n:0;
 }
+function getCashBreakdown(){
+  try{return normalizeCashBreakdown(JSON.parse(localStorage.getItem(CASH_BREAKDOWN_KEY)||"null"))}
+  catch(_){return null}
+}
+function normalizeCashBreakdown(raw){
+  if(!raw||!Array.isArray(raw.accounts))return null;
+  const categories=["Liquiditätsreserve","Strategisches Cash"];
+  const accounts=raw.accounts.map(row=>({
+    name:String(row?.name||"").trim(),
+    amount:Number(row?.amount),
+    category:String(row?.category||"").trim()
+  })).filter(row=>row.name&&Number.isFinite(row.amount)&&row.amount>=0&&categories.includes(row.category));
+  if(!accounts.length)return null;
+  const sum=category=>accounts.filter(row=>row.category===category).reduce((total,row)=>total+row.amount,0);
+  return {accounts,reserve:sum("Liquiditätsreserve"),strategic:sum("Strategisches Cash")};
+}
 function cashInterestAnnual(cash=getCashTotal()){
   const synced=localStorage.getItem(CASH_INTEREST_KEY);
   if(synced!==null&&synced!==""){
@@ -753,6 +804,7 @@ function mapSyncPayload(data){
   return {
     cashTotal:Number.isFinite(cashValue)?cashValue:null,
     cashInterestAnnual:Number.isFinite(cashInterestValue)?cashInterestValue:null,
+    cashBreakdown:normalizeCashBreakdown(data?.cash_components),
     meta:Array.isArray(data?.meta)?data.meta:null,
     history:Array.isArray(data?.history)?data.history:null,
     growthKpis,
@@ -1677,6 +1729,26 @@ function renderDashboardOverview(t,rt){
   setText("mCashShare",pct(cashShare,1));
   setText("mPropertyShare",pct(propertyShare,1));
 }
+function renderCashDetails(){
+  const breakdown=getCashBreakdown();
+  const total=getCashTotal();
+  setText("cashDetailsTotal",euro(total,2));
+  const reserve=breakdown?.reserve??0,strategic=breakdown?.strategic??0;
+  setText("cashReserveTotal",breakdown?euro(reserve,2):"–");
+  setText("cashStrategicTotal",breakdown?euro(strategic,2):"–");
+  const sum=reserve+strategic;
+  document.getElementById("cashReserveBar").style.width=sum?reserve/sum*100+"%":"0%";
+  document.getElementById("cashStrategicBar").style.width=sum?strategic/sum*100+"%":"0%";
+  const rows=category=>breakdown?.accounts.filter(a=>a.category===category&&a.amount>0).map(a=>
+    `<div class="cash-account-row"><span>${esc(a.name)}</span><strong>${euro(a.amount,2)}</strong></div>`
+  ).join("")||'<div class="sub">Noch keine Kontodaten synchronisiert.</div>';
+  setHtml("cashReserveAccounts",rows("Liquiditätsreserve"));
+  setHtml("cashStrategicAccounts",rows("Strategisches Cash"));
+  const status=document.getElementById("cashDetailStatus");
+  if(!breakdown)status.textContent="Für die Kontenaufteilung bitte unter Sync erneut mit Google Sheets synchronisieren.";
+  else if(Math.abs(sum-total)>0.02)status.textContent="Hinweis: Kontenaufteilung und Cash-Gesamtwert weichen ab. Bitte Sheet-Sync prüfen.";
+  else status.textContent=`Konten vollständig zugeordnet · ${pct(sum?reserve/sum*100:0,1)} Liquidität / ${pct(sum?strategic/sum*100:0,1)} strategisch.`;
+}
 function renderDashboardInvestment(t,agg){
   setText("mValue",euro(t.investedValue));
   setText("mDiv",euro(t.div));
@@ -1709,6 +1781,7 @@ function renderPortfolioOverviewTable(agg,t){
 function render(){
   const t=totals(),agg=aggregate(),rt=propertyTotals();
   renderDashboardOverview(t,rt);
+  renderCashDetails();
   renderDashboardInvestment(t,agg);
   renderBrokerBars();
   renderPortfolioOverviewTable(agg,t);
@@ -2064,9 +2137,12 @@ function switchView(id){
     else button.removeAttribute("aria-current");
   });
   if(id==="dashboard")renderHistory();
+  if(id==="cashdetails")renderCashDetails();
 }
 window.addEventListener("resize",renderHistory);
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
+document.getElementById("openCashDetails").addEventListener("click",()=>switchView("cashdetails"));
+document.getElementById("cashBackBtn").addEventListener("click",()=>switchView("dashboard"));
 document.querySelectorAll(".rangebtn").forEach(b=>b.addEventListener("click",()=>{historyRange=b.dataset.range;renderHistory();}));
 document.getElementById("assetBackBtn").addEventListener("click",()=>{selectedAssetName=null;switchView(assetDetailReturnView||"portfolio")});
 document.getElementById("newGoalBtn").addEventListener("click",newGoal);
@@ -2196,7 +2272,7 @@ document.getElementById("syncNowBtn").addEventListener("click",()=>{saveSyncSett
 document.getElementById("resetBtn").addEventListener("click",()=>{
   if(!confirm("Investment-, Immobilien-, Ziel- und Allokationsdaten auf Startwerte zurücksetzen?"))return;
   positions=clone(SEED_POSITIONS);properties=clone(SEED_PROPERTIES);growthOverrides={};goals=[];allocationTargets={};portfolioGrowthKpis=null;watchlist=[];portfolioMeta=[];portfolioHistory=[];
-  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,CASH_INTEREST_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,LAST_SYNC_TS_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
+  [GROWTH_KPI_KEY,PROJECTION_SAVINGS_KEY,WATCHLIST_KEY,CASH_TOTAL_KEY,CASH_INTEREST_KEY,CASH_BREAKDOWN_KEY,META_KEY,HISTORY_KEY,HEALTH_KEY,LAST_SYNC_TS_KEY,"portfolio_os_v4_last_sync"].forEach(key=>localStorage.removeItem(key));
   persist();loadCashEditor();clearForm();clearPropertyForm();clearGoalForm();render();renderHealth();
 });
 
@@ -2265,6 +2341,9 @@ async function syncFromSheet(isAuto=false){
     if(mapped.cashTotal!==null){
       localStorage.setItem(CASH_TOTAL_KEY,String(mapped.cashTotal));
       loadCashEditor();
+    }
+    if(mapped.cashBreakdown){
+      localStorage.setItem(CASH_BREAKDOWN_KEY,JSON.stringify(mapped.cashBreakdown));
     }
     if(mapped.cashInterestAnnual!==null){
       localStorage.setItem(CASH_INTEREST_KEY,String(mapped.cashInterestAnnual));
