@@ -65,6 +65,33 @@ loaded.elements.get("historyChart").clientWidth = 320;
 loaded.context.renderHistory();
 assert.match(loaded.elements.get("historyChart").innerHTML, /viewBox="0 0 320 240"/);
 assert.match(loaded.elements.get("historyChart").innerHTML, /stroke="var\(--accent\)"/);
+const cashDemo = appContext(html, {
+  portfolio_os_v5_cash_total: "62727.14",
+  portfolio_os_v20_cash_breakdown: JSON.stringify({
+    accounts: [
+      { name: "C24 Smartkonto", amount: 12123.5, category: "Liquiditätsreserve" },
+      { name: "Girokonto 2", amount: 5000, category: "Liquiditätsreserve" },
+      { name: "Reserve", amount: 11000, category: "Liquiditätsreserve" },
+      { name: "Tagesgeld 1", amount: 20000, category: "Strategisches Cash" },
+      { name: "Tagesgeld 2", amount: 12000, category: "Strategisches Cash" },
+      { name: "Depot-Cash", amount: 2603.64, category: "Strategisches Cash" }
+    ]
+  })
+});
+cashDemo.context.switchView("cashdetails");
+assert.equal(cashDemo.views.filter(view => view.classList.contains("active")).length, 1);
+assert.equal(cashDemo.elements.get("cashReserveTotal").textContent, "28.123,50 €");
+assert.equal(cashDemo.elements.get("cashStrategicTotal").textContent, "34.603,64 €");
+assert.match(cashDemo.elements.get("cashReserveAccounts").innerHTML, /C24 Smartkonto/);
+assert.match(cashDemo.elements.get("cashStrategicAccounts").innerHTML, /Tagesgeld 2/);
+assert.match(cashDemo.elements.get("cashDetailStatus").textContent, /vollständig zugeordnet/);
+const mappedCash = cashDemo.context.mapSyncPayload({
+  positions: [], cash_total: 72727.14, cash_components: {
+    sheet_cash: 62727.14, accounts: [{ name: "Tagesgeld 2", amount: 12000, category: "Strategisches Cash" }]
+  }
+});
+assert.equal(mappedCash.cashTotal, 62727.14, "uses sheet cash, not legacy fixed addition");
+assert.equal(mappedCash.cashBreakdown.strategic, 12000);
 for (const button of loaded.navigation) {
   loaded.context.switchView(button.dataset.view);
   assert.equal(loaded.views.filter(view => view.classList.contains("active")).length, 1);
@@ -124,7 +151,7 @@ async function testOfflineShell() {
   listeners.activate(lifecycle); await completion;
   assert.ok(stores.has("unrelated-app-cache"));
   assert.ok(!stores.has("portfolio-os-shell-old"));
-  for (const [url, mode] of [[origin, "navigate"], [`${origin}styles.css?v=28`, "cors"]]) {
+  for (const [url, mode] of [[origin, "navigate"], [`${origin}styles.css?v=30`, "cors"]]) {
     let response;
     listeners.fetch({ request: { url, mode, method: "GET" }, respondWith(promise) { response = promise; } });
     assert.ok((await response)?.length > 0, `offline response: ${url}`);
