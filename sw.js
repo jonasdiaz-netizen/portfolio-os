@@ -1,8 +1,8 @@
 const CACHE_PREFIX = "portfolio-os-shell-";
-const CACHE = `${CACHE_PREFIX}v35-sync-timeout180-scii`;
+const CACHE = `${CACHE_PREFIX}v36-cash-breakdown`;
 const ASSETS = [
   "./index.html",
-  "./styles.css?v=29",
+  "./styles.css?v=30",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
